@@ -1,1 +1,8 @@
-export const environment = {};
+export const environment = {
+  production: true,
+  odata: {
+    url: `http://ista12.ece-gruppe.de:2025/ISTA12_ECETURKEY/ODataV4/Company('Portfolyo')/ContractTurnoverEntry`,
+    user: 'Test_User_Up',
+    pass: 'EceTurkey2025?',
+  }
+};
