@@ -13,38 +13,115 @@ export class Ciro implements OnInit {
   months = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
 
   allData: any[] = [];
-  filteredData: any[] = [];
+  tree: any[] = [];
 
   selectedMall = '';
   selectedMonth = 0;
-
   malls: string[] = [];
+
+  expandedMalls: Set<string> = new Set();
+  expandedLots: Set<string> = new Set();
 
   ngOnInit() {
     this.allData = this.getMockData();
     this.malls = [...new Set(this.allData.map(d => d.mall))];
-    this.applyFilters();
+    this.buildTree();
   }
 
-  applyFilters() {
-    this.filteredData = this.allData.filter(row => {
+  buildTree() {
+    const filtered = this.allData.filter(row => {
       if (this.selectedMall && row.mall !== this.selectedMall) return false;
       return true;
     });
+
+    const mallMap: any = {};
+
+    for (const row of filtered) {
+      if (!mallMap[row.mall]) {
+        mallMap[row.mall] = { name: row.mall, lots: {}, months: Array(12).fill(0) };
+      }
+      if (!mallMap[row.mall].lots[row.lotType]) {
+        mallMap[row.mall].lots[row.lotType] = { name: row.lotType, brands: [], months: Array(12).fill(0) };
+      }
+
+      mallMap[row.mall].lots[row.lotType].brands.push({
+        brand: row.brand,
+        branch: row.branch,
+        amounts: row.amounts,
+      });
+
+      row.amounts.forEach((a: number, i: number) => {
+        mallMap[row.mall].lots[row.lotType].months[i] += a;
+        mallMap[row.mall].months[i] += a;
+      });
+    }
+
+    this.tree = Object.values(mallMap).map((mall: any) => ({
+      ...mall,
+      lots: Object.values(mall.lots),
+    }));
   }
 
-  getDisplayAmounts(amounts: number[]) {
-    if (this.selectedMonth > 0) {
-      return [amounts[this.selectedMonth - 1]];
+  applyFilters() {
+    this.buildTree();
+  }
+
+  toggleMall(mallName: string) {
+    if (this.expandedMalls.has(mallName)) {
+      this.expandedMalls.delete(mallName);
+    } else {
+      this.expandedMalls.add(mallName);
     }
-    return amounts;
+  }
+
+  toggleLot(key: string) {
+    if (this.expandedLots.has(key)) {
+      this.expandedLots.delete(key);
+    } else {
+      this.expandedLots.add(key);
+    }
+  }
+
+  isMallExpanded(mallName: string) {
+    return this.expandedMalls.has(mallName);
+  }
+
+  isLotExpanded(key: string) {
+    return this.expandedLots.has(key);
+  }
+
+  expandAll() {
+    this.tree.forEach(mall => {
+      this.expandedMalls.add(mall.name);
+      mall.lots.forEach((lot: any) => {
+        this.expandedLots.add(mall.name + '|||' + lot.name);
+      });
+    });
+  }
+
+  collapseAll() {
+    this.expandedMalls.clear();
+    this.expandedLots.clear();
   }
 
   getDisplayMonths() {
-    if (this.selectedMonth > 0) {
-      return [this.months[this.selectedMonth - 1]];
-    }
+    if (this.selectedMonth > 0) return [this.months[this.selectedMonth - 1]];
     return this.months;
+  }
+
+  getDisplayAmounts(amounts: number[]) {
+    if (this.selectedMonth > 0) return [amounts[this.selectedMonth - 1]];
+    return amounts;
+  }
+
+  getGrandTotal() {
+    return this.tree.reduce((sum, mall) => sum + this.getTotal(mall.months), 0);
+  }
+
+  getGrandMonths(): number[] {
+    const result = Array(12).fill(0);
+    this.tree.forEach(mall => mall.months.forEach((v: number, i: number) => result[i] += v));
+    return result;
   }
 
   getMockData() {
@@ -63,7 +140,7 @@ export class Ciro implements OnInit {
   }
 
   getTotalCiro() {
-    return this.filteredData.reduce((sum, row) => sum + this.getTotal(row.amounts), 0);
+    return this.tree.reduce((sum, mall) => sum + this.getTotal(mall.months), 0);
   }
 
   fmt(n: number) {

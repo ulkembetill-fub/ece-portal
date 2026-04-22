@@ -47,15 +47,36 @@
   border-bottom: 1px solid #2a3347;
   padding: 10px 20px;
   display: flex;
-  gap: 20px;
+  gap: 12px;
   align-items: center;
   flex-shrink: 0;
+}
+
+.btn {
+  background: transparent;
+  color: #7a8ba8;
+  border: 1px solid #3a4660;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn:hover {
+  color: #e8edf5;
+  border-color: #3b82f6;
 }
 
 .filter-group {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
+}
+
+.filter-group:first-of-type {
+  margin-left: 0;
 }
 
 .filter-label {
@@ -105,22 +126,58 @@ thead th {
   letter-spacing: 0.06em;
 }
 
-thead th.num {
-  text-align: right;
+thead th.num { text-align: right; }
+
+/* MALL SATIRI */
+tr.mall-row {
+  background: #111827;
+  cursor: pointer;
+}
+tr.mall-row:hover { background: #1a2535; }
+tr.mall-row td {
+  padding: 9px 12px;
+  font-weight: 600;
+  color: #bfdbfe;
+  font-family: monospace;
+  font-size: 11px;
+  border-bottom: 1px solid #1a3a6b;
 }
 
-tbody tr {
-  border-bottom: 1px solid #1a2035;
-  background: #0f1117;
+/* LOT SATIRI */
+tr.lot-row {
+  background: #141e30;
+  cursor: pointer;
+}
+tr.lot-row:hover { background: #1a2840; }
+tr.lot-row td {
+  padding: 8px 12px;
+  font-weight: 500;
+  color: #93c5fd;
+  border-bottom: 1px solid #2a3347;
+  font-size: 11px;
 }
 
-tbody tr:hover {
-  background: #141a24;
-}
-
-tbody td {
+/* BRAND SATIRI */
+tr.brand-row { background: #0f1117; }
+tr.brand-row:hover { background: #141a24; }
+tr.brand-row td {
   padding: 7px 12px;
   color: #7a8ba8;
+  border-bottom: 1px solid #1a2035;
+  font-size: 12px;
+}
+
+/* TOPLAM SATIRI */
+tr.total-row {
+  background: #0a1628;
+}
+tr.total-row td {
+  padding: 10px 12px;
+  font-weight: 600;
+  font-family: monospace;
+  color: #bfdbfe;
+  border-top: 2px solid #1a3a6b;
+  font-size: 11px;
 }
 
 td.num {
@@ -134,9 +191,10 @@ td.total {
   color: #bfdbfe;
 }
 
-td.brand-name {
-  font-weight: 500;
-  color: #e8edf5;
+.expand-icon {
+  font-size: 9px;
+  margin-right: 6px;
+  color: #4a5568;
 }
 
 .badge {

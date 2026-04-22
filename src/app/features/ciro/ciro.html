@@ -14,13 +14,15 @@
     </div>
     <div class="stat-card">
       <div class="stat-label">Kiracı Sayısı</div>
-      <div class="stat-value">{{ filteredData.length }}</div>
+      <div class="stat-value">{{ allData.length }}</div>
       <div class="stat-sub">Aktif brand</div>
     </div>
   </div>
 
-  <!-- FİLTRELER -->
+  <!-- TOOLBAR -->
   <div class="toolbar">
+    <button class="btn" (click)="expandAll()">↕ Tümünü Aç</button>
+    <button class="btn" (click)="collapseAll()">↕ Tümünü Kapat</button>
     <div class="filter-group">
       <span class="filter-label">Mall:</span>
       <select [(ngModel)]="selectedMall" (change)="applyFilters()">
@@ -46,9 +48,7 @@
     <table>
       <thead>
         <tr>
-          <th>Mall</th>
-          <th>Lot Tipi</th>
-          <th>Brand</th>
+          <th>Mall / Lot / Brand</th>
           <th>Sektör</th>
           @for (m of getDisplayMonths(); track m) {
             <th class="num">{{ m }}</th>
@@ -57,25 +57,76 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of filteredData; track row.brand) {
-          <tr>
-            <td>{{ row.mall }}</td>
-            <td>{{ row.lotType }}</td>
-            <td class="brand-name">{{ row.brand }}</td>
+
+        @for (mall of tree; track mall.name) {
+
+          <!-- MALL SATIRI -->
+          <tr class="mall-row" (click)="toggleMall(mall.name)">
             <td>
-              <span class="badge"
-                [style.background]="sectorColor(row.branch) + '22'"
-                [style.color]="sectorColor(row.branch)"
-                [style.border-color]="sectorColor(row.branch) + '44'">
-                {{ row.branch }}
-              </span>
+              <span class="expand-icon">{{ isMallExpanded(mall.name) ? '▼' : '▶' }}</span>
+              {{ mall.name }}
             </td>
-            @for (amt of getDisplayAmounts(row.amounts); track $index) {
+            <td></td>
+            @for (amt of getDisplayAmounts(mall.months); track $index) {
               <td class="num">{{ fmt(amt) }}</td>
             }
-            <td class="num total">{{ fmt(getTotal(getDisplayAmounts(row.amounts))) }}</td>
+            <td class="num">{{ fmt(getTotal(getDisplayAmounts(mall.months))) }}</td>
           </tr>
+
+          @if (isMallExpanded(mall.name)) {
+            @for (lot of mall.lots; track lot.name) {
+
+              <!-- LOT SATIRI -->
+              <tr class="lot-row" (click)="toggleLot(mall.name + '|||' + lot.name)">
+                <td>
+                  <span class="expand-icon" style="margin-left:16px">{{ isLotExpanded(mall.name + '|||' + lot.name) ? '▼' : '▶' }}</span>
+                  {{ lot.name }}
+                </td>
+                <td></td>
+                @for (amt of getDisplayAmounts(lot.months); track $index) {
+                  <td class="num">{{ fmt(amt) }}</td>
+                }
+                <td class="num">{{ fmt(getTotal(getDisplayAmounts(lot.months))) }}</td>
+              </tr>
+
+              @if (isLotExpanded(mall.name + '|||' + lot.name)) {
+                @for (brand of lot.brands; track brand.brand) {
+
+                  <!-- BRAND SATIRI -->
+                  <tr class="brand-row">
+                    <td>
+                      <span style="margin-left:40px">{{ brand.brand }}</span>
+                    </td>
+                    <td>
+                      <span class="badge"
+                        [style.background]="sectorColor(brand.branch) + '22'"
+                        [style.color]="sectorColor(brand.branch)"
+                        [style.border-color]="sectorColor(brand.branch) + '44'">
+                        {{ brand.branch }}
+                      </span>
+                    </td>
+                    @for (amt of getDisplayAmounts(brand.amounts); track $index) {
+                      <td class="num">{{ fmt(amt) }}</td>
+                    }
+                    <td class="num total">{{ fmt(getTotal(getDisplayAmounts(brand.amounts))) }}</td>
+                  </tr>
+
+                }
+              }
+            }
+          }
         }
+
+        <!-- GENEL TOPLAM -->
+        <tr class="total-row">
+          <td>GENEL TOPLAM</td>
+          <td></td>
+          @for (amt of getDisplayAmounts(getGrandMonths()); track $index) {
+            <td class="num">{{ fmt(amt) }}</td>
+          }
+          <td class="num">{{ fmt(getTotal(getDisplayAmounts(getGrandMonths()))) }}</td>
+        </tr>
+
       </tbody>
     </table>
   </div>
