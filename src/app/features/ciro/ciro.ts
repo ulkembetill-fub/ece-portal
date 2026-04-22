@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
+import { OdataService } from '../../core/odata';
 
 @Component({
   selector: 'app-ciro',
@@ -25,54 +26,98 @@ export class Ciro implements OnInit {
   expandedMalls: Set<string> = new Set();
   expandedLots: Set<string> = new Set();
 
-  constructor() {
+  loading = false;
+  error = '';
+
+  constructor(private odataService: OdataService) {
     const now = new Date().getFullYear();
     this.selectedYear = now;
     this.years = [now - 1, now, now + 1];
   }
 
   ngOnInit() {
+    this.loadData();
+  }
+
+  loadData() {
+    this.loading = true;
+    this.error = '';
+
+    this.odataService.getTurnover(this.selectedYear).subscribe({
+      next: (res) => {
+        const raw = res.value || [];
+        if (raw.length === 0) {
+          this.useMockData();
+        } else {
+          this.allData = raw;
+          this.malls = [...new Set(this.allData.map((d: any) => d.Mall_Code))];
+          this.buildTree();
+        }
+        this.loading = false;
+      },
+      error: () => {
+        this.useMockData();
+        this.loading = false;
+      }
+    });
+  }
+
+  useMockData() {
+    this.error = 'OData bağlantısı yok — demo veri gösteriliyor.';
     this.allData = this.getMockData();
-    this.malls = [...new Set(this.allData.map(d => d.mall))];
+    this.malls = [...new Set(this.allData.map((d: any) => d.mall))];
     this.buildTree();
   }
 
   selectYear(year: number) {
     this.selectedYear = year;
-    this.buildTree();
+    this.loadData();
   }
 
   buildTree() {
-    const filtered = this.allData.filter(row => {
-      if (this.selectedMall && row.mall !== this.selectedMall) return false;
+    const filtered = this.allData.filter((row: any) => {
+      const mallCode = row.Mall_Code || row.mall;
+      if (this.selectedMall && mallCode !== this.selectedMall) return false;
       return true;
     });
 
     const mallMap: any = {};
 
     for (const row of filtered) {
-      if (!mallMap[row.mall]) {
-        mallMap[row.mall] = { name: row.mall, lots: {}, months: Array(12).fill(0) };
-      }
-      if (!mallMap[row.mall].lots[row.lotType]) {
-        mallMap[row.mall].lots[row.lotType] = { name: row.lotType, brands: [], months: Array(12).fill(0) };
+      const mall = row.Mall_Code || row.mall || '?';
+      const lot = row.Lot_Type || row.lotType || 'MAĞAZA';
+      const brand = row.Brand_Name || row.brand || '?';
+      const branch = row.Branch || row.branch || 'Diğer';
+
+      if (!mallMap[mall]) mallMap[mall] = { name: mall, lots: {}, months: Array(12).fill(0) };
+      if (!mallMap[mall].lots[lot]) mallMap[mall].lots[lot] = { name: lot, brands: {}, months: Array(12).fill(0) };
+      if (!mallMap[mall].lots[lot].brands[brand]) {
+        mallMap[mall].lots[lot].brands[brand] = { brand, branch, amounts: Array(12).fill(0) };
       }
 
-      mallMap[row.mall].lots[row.lotType].brands.push({
-        brand: row.brand,
-        branch: row.branch,
-        amounts: row.amounts,
-      });
-
-      row.amounts.forEach((a: number, i: number) => {
-        mallMap[row.mall].lots[row.lotType].months[i] += a;
-        mallMap[row.mall].months[i] += a;
-      });
+      if (row.Mall_Code) {
+        // OData verisi — her satır bir ay
+        const month = (row.Month || 1) - 1;
+        const amount = parseFloat(row.Amount || 0);
+        mallMap[mall].lots[lot].brands[brand].amounts[month] += amount;
+        mallMap[mall].lots[lot].months[month] += amount;
+        mallMap[mall].months[month] += amount;
+      } else {
+        // Mock veri — amounts dizisi var
+        row.amounts.forEach((a: number, i: number) => {
+          mallMap[mall].lots[lot].brands[brand].amounts[i] += a;
+          mallMap[mall].lots[lot].months[i] += a;
+          mallMap[mall].months[i] += a;
+        });
+      }
     }
 
     this.tree = Object.values(mallMap).map((mall: any) => ({
       ...mall,
-      lots: Object.values(mall.lots),
+      lots: Object.values(mall.lots).map((lot: any) => ({
+        ...lot,
+        brands: Object.values(lot.brands),
+      })),
     }));
   }
 
@@ -81,35 +126,22 @@ export class Ciro implements OnInit {
   }
 
   toggleMall(mallName: string) {
-    if (this.expandedMalls.has(mallName)) {
-      this.expandedMalls.delete(mallName);
-    } else {
-      this.expandedMalls.add(mallName);
-    }
+    if (this.expandedMalls.has(mallName)) this.expandedMalls.delete(mallName);
+    else this.expandedMalls.add(mallName);
   }
 
   toggleLot(key: string) {
-    if (this.expandedLots.has(key)) {
-      this.expandedLots.delete(key);
-    } else {
-      this.expandedLots.add(key);
-    }
+    if (this.expandedLots.has(key)) this.expandedLots.delete(key);
+    else this.expandedLots.add(key);
   }
 
-  isMallExpanded(mallName: string) {
-    return this.expandedMalls.has(mallName);
-  }
-
-  isLotExpanded(key: string) {
-    return this.expandedLots.has(key);
-  }
+  isMallExpanded(mallName: string) { return this.expandedMalls.has(mallName); }
+  isLotExpanded(key: string) { return this.expandedLots.has(key); }
 
   expandAll() {
     this.tree.forEach(mall => {
       this.expandedMalls.add(mall.name);
-      mall.lots.forEach((lot: any) => {
-        this.expandedLots.add(mall.name + '|||' + lot.name);
-      });
+      mall.lots.forEach((lot: any) => this.expandedLots.add(mall.name + '|||' + lot.name));
     });
   }
 
@@ -137,23 +169,18 @@ export class Ciro implements OnInit {
   exportExcel() {
     const wb = XLSX.utils.book_new();
     const rows: any[] = [];
-
     const activeCols = this.selectedMonth > 0
       ? [this.selectedMonth - 1]
       : Array.from({length: 12}, (_, i) => i);
 
-    const headers = ['Mall', 'Lot Tipi', 'Brand', 'Sektör',
-      ...activeCols.map(i => this.months[i]), 'Toplam'];
-    rows.push(headers);
+    rows.push(['Mall', 'Lot Tipi', 'Brand', 'Sektör', ...activeCols.map(i => this.months[i]), 'Toplam']);
 
     for (const mall of this.tree) {
       const mallAmts = activeCols.map(i => mall.months[i]);
       rows.push([mall.name, '', '', '', ...mallAmts, mallAmts.reduce((a:number,b:number)=>a+b,0)]);
-
       for (const lot of mall.lots) {
         const lotAmts = activeCols.map(i => lot.months[i]);
         rows.push(['', lot.name, '', '', ...lotAmts, lotAmts.reduce((a:number,b:number)=>a+b,0)]);
-
         for (const brand of lot.brands) {
           const brandAmts = activeCols.map(i => brand.amounts[i]);
           rows.push(['', '', brand.brand, brand.branch, ...brandAmts, brandAmts.reduce((a:number,b:number)=>a+b,0)]);
@@ -166,7 +193,6 @@ export class Ciro implements OnInit {
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, ws, 'Ciro Raporu');
-
     const mall = this.selectedMall || 'Tum';
     const donem = this.selectedMonth > 0 ? this.months[this.selectedMonth - 1] : 'TumYil';
     XLSX.writeFile(wb, `CiroRaporu_${mall}_${this.selectedYear}_${donem}.xlsx`);
