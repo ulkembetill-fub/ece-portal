@@ -17,14 +17,27 @@ export class Ciro implements OnInit {
 
   selectedMall = '';
   selectedMonth = 0;
+  selectedYear: number;
+  years: number[] = [];
   malls: string[] = [];
 
   expandedMalls: Set<string> = new Set();
   expandedLots: Set<string> = new Set();
 
+  constructor() {
+    const now = new Date().getFullYear();
+    this.selectedYear = now;
+    this.years = [now - 1, now, now + 1];
+  }
+
   ngOnInit() {
     this.allData = this.getMockData();
     this.malls = [...new Set(this.allData.map(d => d.mall))];
+    this.buildTree();
+  }
+
+  selectYear(year: number) {
+    this.selectedYear = year;
     this.buildTree();
   }
 
@@ -112,10 +125,6 @@ export class Ciro implements OnInit {
   getDisplayAmounts(amounts: number[]) {
     if (this.selectedMonth > 0) return [amounts[this.selectedMonth - 1]];
     return amounts;
-  }
-
-  getGrandTotal() {
-    return this.tree.reduce((sum, mall) => sum + this.getTotal(mall.months), 0);
   }
 
   getGrandMonths(): number[] {

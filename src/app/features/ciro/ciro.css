@@ -52,6 +52,35 @@
   flex-shrink: 0;
 }
 
+.year-tabs {
+  display: flex;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.year-tab {
+  font-family: monospace;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #3a4660;
+  background: transparent;
+  color: #7a8ba8;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.year-tab.active {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #3b82f6;
+}
+
+.year-tab:hover:not(.active) {
+  border-color: #3b82f6;
+  color: #e8edf5;
+}
+
 .btn {
   background: transparent;
   color: #7a8ba8;
@@ -75,7 +104,7 @@
   margin-left: auto;
 }
 
-.filter-group:first-of-type {
+.filter-group + .filter-group {
   margin-left: 0;
 }
 
@@ -128,7 +157,6 @@ thead th {
 
 thead th.num { text-align: right; }
 
-/* MALL SATIRI */
 tr.mall-row {
   background: #111827;
   cursor: pointer;
@@ -143,7 +171,6 @@ tr.mall-row td {
   border-bottom: 1px solid #1a3a6b;
 }
 
-/* LOT SATIRI */
 tr.lot-row {
   background: #141e30;
   cursor: pointer;
@@ -157,51 +184,8 @@ tr.lot-row td {
   font-size: 11px;
 }
 
-/* BRAND SATIRI */
 tr.brand-row { background: #0f1117; }
 tr.brand-row:hover { background: #141a24; }
 tr.brand-row td {
   padding: 7px 12px;
-  color: #7a8ba8;
-  border-bottom: 1px solid #1a2035;
-  font-size: 12px;
-}
-
-/* TOPLAM SATIRI */
-tr.total-row {
-  background: #0a1628;
-}
-tr.total-row td {
-  padding: 10px 12px;
-  font-weight: 600;
-  font-family: monospace;
-  color: #bfdbfe;
-  border-top: 2px solid #1a3a6b;
-  font-size: 11px;
-}
-
-td.num {
-  text-align: right;
-  font-family: monospace;
-  color: #e8edf5;
-}
-
-td.total {
-  font-weight: 600;
-  color: #bfdbfe;
-}
-
-.expand-icon {
-  font-size: 9px;
-  margin-right: 6px;
-  color: #4a5568;
-}
-
-.badge {
-  border: 1px solid;
-  border-radius: 4px;
-  padding: 2px 7px;
-  font-size: 10px;
-  font-family: monospace;
-  white-space: nowrap;
-}
+  color: #

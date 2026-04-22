@@ -21,8 +21,17 @@
 
   <!-- TOOLBAR -->
   <div class="toolbar">
+    <div class="year-tabs">
+      @for (y of years; track y) {
+        <button class="year-tab" [class.active]="selectedYear === y" (click)="selectYear(y)">
+          {{ y }}
+        </button>
+      }
+    </div>
+
     <button class="btn" (click)="expandAll()">↕ Tümünü Aç</button>
     <button class="btn" (click)="collapseAll()">↕ Tümünü Kapat</button>
+
     <div class="filter-group">
       <span class="filter-label">Mall:</span>
       <select [(ngModel)]="selectedMall" (change)="applyFilters()">
