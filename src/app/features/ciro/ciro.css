@@ -1,0 +1,149 @@
+.ciro-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: #0f1117;
+  color: #e8edf5;
+}
+
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: #2a3347;
+  border-bottom: 1px solid #2a3347;
+  flex-shrink: 0;
+}
+
+.stat-card {
+  background: #161b27;
+  padding: 16px 20px;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: #7a8ba8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: #e8edf5;
+  font-family: monospace;
+}
+
+.stat-sub {
+  font-size: 11px;
+  color: #4a5568;
+  margin-top: 3px;
+}
+
+.toolbar {
+  background: #161b27;
+  border-bottom: 1px solid #2a3347;
+  padding: 10px 20px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-label {
+  font-size: 11px;
+  color: #7a8ba8;
+  font-family: monospace;
+}
+
+select {
+  background: #1e2535;
+  color: #e8edf5;
+  border: 1px solid #3a4660;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+select:focus {
+  border-color: #3b82f6;
+}
+
+.table-wrap {
+  flex: 1;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: #0d1a30;
+  color: #7a8ba8;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  border-bottom: 2px solid #1a3a6b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+thead th.num {
+  text-align: right;
+}
+
+tbody tr {
+  border-bottom: 1px solid #1a2035;
+  background: #0f1117;
+}
+
+tbody tr:hover {
+  background: #141a24;
+}
+
+tbody td {
+  padding: 7px 12px;
+  color: #7a8ba8;
+}
+
+td.num {
+  text-align: right;
+  font-family: monospace;
+  color: #e8edf5;
+}
+
+td.total {
+  font-weight: 600;
+  color: #bfdbfe;
+}
+
+td.brand-name {
+  font-weight: 500;
+  color: #e8edf5;
+}
+
+.badge {
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-family: monospace;
+  white-space: nowrap;
+}

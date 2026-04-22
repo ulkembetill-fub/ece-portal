@@ -1,0 +1,83 @@
+<div class="ciro-page">
+
+  <!-- STAT KARTLARI -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">Toplam Ciro</div>
+      <div class="stat-value">{{ fmt(getTotalCiro()) }}</div>
+      <div class="stat-sub">Tüm malllar</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Mall Sayısı</div>
+      <div class="stat-value">{{ malls.length }}</div>
+      <div class="stat-sub">{{ malls.join(' · ') }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Kiracı Sayısı</div>
+      <div class="stat-value">{{ filteredData.length }}</div>
+      <div class="stat-sub">Aktif brand</div>
+    </div>
+  </div>
+
+  <!-- FİLTRELER -->
+  <div class="toolbar">
+    <div class="filter-group">
+      <span class="filter-label">Mall:</span>
+      <select [(ngModel)]="selectedMall" (change)="applyFilters()">
+        <option value="">Tümü</option>
+        @for (mall of malls; track mall) {
+          <option [value]="mall">{{ mall }}</option>
+        }
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Dönem:</span>
+      <select [(ngModel)]="selectedMonth" (change)="applyFilters()">
+        <option [value]="0">Tüm Yıl</option>
+        @for (m of months; track $index) {
+          <option [value]="$index + 1">{{ m }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- TABLO -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Mall</th>
+          <th>Lot Tipi</th>
+          <th>Brand</th>
+          <th>Sektör</th>
+          @for (m of getDisplayMonths(); track m) {
+            <th class="num">{{ m }}</th>
+          }
+          <th class="num">Toplam</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of filteredData; track row.brand) {
+          <tr>
+            <td>{{ row.mall }}</td>
+            <td>{{ row.lotType }}</td>
+            <td class="brand-name">{{ row.brand }}</td>
+            <td>
+              <span class="badge"
+                [style.background]="sectorColor(row.branch) + '22'"
+                [style.color]="sectorColor(row.branch)"
+                [style.border-color]="sectorColor(row.branch) + '44'">
+                {{ row.branch }}
+              </span>
+            </td>
+            @for (amt of getDisplayAmounts(row.amounts); track $index) {
+              <td class="num">{{ fmt(amt) }}</td>
+            }
+            <td class="num total">{{ fmt(getTotal(getDisplayAmounts(row.amounts))) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+</div>
