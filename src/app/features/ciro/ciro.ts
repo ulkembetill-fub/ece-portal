@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-ciro',
@@ -131,6 +132,44 @@ export class Ciro implements OnInit {
     const result = Array(12).fill(0);
     this.tree.forEach(mall => mall.months.forEach((v: number, i: number) => result[i] += v));
     return result;
+  }
+
+  exportExcel() {
+    const wb = XLSX.utils.book_new();
+    const rows: any[] = [];
+
+    const activeCols = this.selectedMonth > 0
+      ? [this.selectedMonth - 1]
+      : Array.from({length: 12}, (_, i) => i);
+
+    const headers = ['Mall', 'Lot Tipi', 'Brand', 'Sektör',
+      ...activeCols.map(i => this.months[i]), 'Toplam'];
+    rows.push(headers);
+
+    for (const mall of this.tree) {
+      const mallAmts = activeCols.map(i => mall.months[i]);
+      rows.push([mall.name, '', '', '', ...mallAmts, mallAmts.reduce((a:number,b:number)=>a+b,0)]);
+
+      for (const lot of mall.lots) {
+        const lotAmts = activeCols.map(i => lot.months[i]);
+        rows.push(['', lot.name, '', '', ...lotAmts, lotAmts.reduce((a:number,b:number)=>a+b,0)]);
+
+        for (const brand of lot.brands) {
+          const brandAmts = activeCols.map(i => brand.amounts[i]);
+          rows.push(['', '', brand.brand, brand.branch, ...brandAmts, brandAmts.reduce((a:number,b:number)=>a+b,0)]);
+        }
+      }
+    }
+
+    const grandAmts = activeCols.map(i => this.getGrandMonths()[i]);
+    rows.push(['GENEL TOPLAM', '', '', '', ...grandAmts, grandAmts.reduce((a:number,b:number)=>a+b,0)]);
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Ciro Raporu');
+
+    const mall = this.selectedMall || 'Tum';
+    const donem = this.selectedMonth > 0 ? this.months[this.selectedMonth - 1] : 'TumYil';
+    XLSX.writeFile(wb, `CiroRaporu_${mall}_${this.selectedYear}_${donem}.xlsx`);
   }
 
   getMockData() {

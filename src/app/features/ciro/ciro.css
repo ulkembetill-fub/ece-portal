@@ -97,6 +97,17 @@
   border-color: #3b82f6;
 }
 
+.btn-excel {
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.btn-excel:hover {
+  background: #10b98122;
+  border-color: #10b981;
+  color: #10b981;
+}
+
 .filter-group {
   display: flex;
   align-items: center;
@@ -188,4 +199,43 @@ tr.brand-row { background: #0f1117; }
 tr.brand-row:hover { background: #141a24; }
 tr.brand-row td {
   padding: 7px 12px;
-  color: #
+  color: #7a8ba8;
+  border-bottom: 1px solid #1a2035;
+  font-size: 12px;
+}
+
+tr.total-row { background: #0a1628; }
+tr.total-row td {
+  padding: 10px 12px;
+  font-weight: 600;
+  font-family: monospace;
+  color: #bfdbfe;
+  border-top: 2px solid #1a3a6b;
+  font-size: 11px;
+}
+
+td.num {
+  text-align: right;
+  font-family: monospace;
+  color: #e8edf5;
+}
+
+td.total {
+  font-weight: 600;
+  color: #bfdbfe;
+}
+
+.expand-icon {
+  font-size: 9px;
+  margin-right: 6px;
+  color: #4a5568;
+}
+
+.badge {
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-family: monospace;
+  white-space: nowrap;
+}
