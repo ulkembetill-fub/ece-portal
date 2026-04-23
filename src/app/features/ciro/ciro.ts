@@ -88,22 +88,21 @@ export class Ciro implements OnInit {
       const lot = row.Lot_Type || row.lotType || 'MAĞAZA';
       const brand = row.Brand_Name || row.brand || '?';
       const branch = row.Branch || row.branch || 'Diğer';
+      const contractNo = row.Contract_No || '';
 
       if (!mallMap[mall]) mallMap[mall] = { name: mall, lots: {}, months: Array(12).fill(0) };
       if (!mallMap[mall].lots[lot]) mallMap[mall].lots[lot] = { name: lot, brands: {}, months: Array(12).fill(0) };
       if (!mallMap[mall].lots[lot].brands[brand]) {
-        mallMap[mall].lots[lot].brands[brand] = { brand, branch, amounts: Array(12).fill(0) };
+        mallMap[mall].lots[lot].brands[brand] = { brand, branch, contractNo, amounts: Array(12).fill(0) };
       }
 
       if (row.Mall_Code) {
-        // OData verisi — her satır bir ay
         const month = (row.Month || 1) - 1;
         const amount = parseFloat(row.Amount || 0);
         mallMap[mall].lots[lot].brands[brand].amounts[month] += amount;
         mallMap[mall].lots[lot].months[month] += amount;
         mallMap[mall].months[month] += amount;
       } else {
-        // Mock veri — amounts dizisi var
         row.amounts.forEach((a: number, i: number) => {
           mallMap[mall].lots[lot].brands[brand].amounts[i] += a;
           mallMap[mall].lots[lot].months[i] += a;
@@ -173,23 +172,23 @@ export class Ciro implements OnInit {
       ? [this.selectedMonth - 1]
       : Array.from({length: 12}, (_, i) => i);
 
-    rows.push(['Mall', 'Lot Tipi', 'Brand', 'Sektör', ...activeCols.map(i => this.months[i]), 'Toplam']);
+    rows.push(['Mall', 'Lot Tipi', 'Brand', 'Kontrat No', 'Sektör', ...activeCols.map(i => this.months[i]), 'Toplam']);
 
     for (const mall of this.tree) {
       const mallAmts = activeCols.map(i => mall.months[i]);
-      rows.push([mall.name, '', '', '', ...mallAmts, mallAmts.reduce((a:number,b:number)=>a+b,0)]);
+      rows.push([mall.name, '', '', '', '', ...mallAmts, mallAmts.reduce((a:number,b:number)=>a+b,0)]);
       for (const lot of mall.lots) {
         const lotAmts = activeCols.map(i => lot.months[i]);
-        rows.push(['', lot.name, '', '', ...lotAmts, lotAmts.reduce((a:number,b:number)=>a+b,0)]);
+        rows.push(['', lot.name, '', '', '', ...lotAmts, lotAmts.reduce((a:number,b:number)=>a+b,0)]);
         for (const brand of lot.brands) {
           const brandAmts = activeCols.map(i => brand.amounts[i]);
-          rows.push(['', '', brand.brand, brand.branch, ...brandAmts, brandAmts.reduce((a:number,b:number)=>a+b,0)]);
+          rows.push(['', '', brand.brand, brand.contractNo || '—', brand.branch, ...brandAmts, brandAmts.reduce((a:number,b:number)=>a+b,0)]);
         }
       }
     }
 
     const grandAmts = activeCols.map(i => this.getGrandMonths()[i]);
-    rows.push(['GENEL TOPLAM', '', '', '', ...grandAmts, grandAmts.reduce((a:number,b:number)=>a+b,0)]);
+    rows.push(['GENEL TOPLAM', '', '', '', '', ...grandAmts, grandAmts.reduce((a:number,b:number)=>a+b,0)]);
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, ws, 'Ciro Raporu');

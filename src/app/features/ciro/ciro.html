@@ -59,6 +59,7 @@
       <thead>
         <tr>
           <th>Mall / Lot / Brand</th>
+          <th>Kontrat No</th>
           <th>Sektör</th>
           @for (m of getDisplayMonths(); track m) {
             <th class="num">{{ m }}</th>
@@ -77,6 +78,7 @@
               {{ mall.name }}
             </td>
             <td></td>
+            <td></td>
             @for (amt of getDisplayAmounts(mall.months); track $index) {
               <td class="num">{{ fmt(amt) }}</td>
             }
@@ -93,6 +95,7 @@
                   {{ lot.name }}
                 </td>
                 <td></td>
+                <td></td>
                 @for (amt of getDisplayAmounts(lot.months); track $index) {
                   <td class="num">{{ fmt(amt) }}</td>
                 }
@@ -106,6 +109,9 @@
                   <tr class="brand-row">
                     <td>
                       <span style="margin-left:40px">{{ brand.brand }}</span>
+                    </td>
+                    <td>
+                      <span class="contract-no">{{ brand.contractNo || '—' }}</span>
                     </td>
                     <td>
                       <span class="badge"
@@ -130,6 +136,7 @@
         <!-- GENEL TOPLAM -->
         <tr class="total-row">
           <td>GENEL TOPLAM</td>
+          <td></td>
           <td></td>
           @for (amt of getDisplayAmounts(getGrandMonths()); track $index) {
             <td class="num">{{ fmt(amt) }}</td>
