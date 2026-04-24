@@ -5,7 +5,7 @@
     <div class="stat-card">
       <div class="stat-label">Toplam Ciro</div>
       <div class="stat-value">{{ fmt(getTotalCiro()) }}</div>
-      <div class="stat-sub">Tüm Maller</div>
+      <div class="stat-sub">Tüm malllar</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Mall Sayısı</div>
@@ -42,9 +42,6 @@
     <button class="btn" (click)="expandAll()">↕ Tümünü Aç</button>
     <button class="btn" (click)="collapseAll()">↕ Tümünü Kapat</button>
     <button class="btn btn-excel" (click)="exportExcel()">⬇ Excel İndir</button>
-    <button class="btn" [class.btn-yoy-active]="showYoY" (click)="toggleYoY()">
-      {{ showYoY ? '✓ YoY Açık' : 'YoY Karşılaştır' }}
-    </button>
 
     <div class="filter-group">
       <span class="filter-label">Mall:</span>
@@ -77,9 +74,7 @@
           @for (m of getDisplayMonths(); track m) {
             <th class="num">{{ m }}</th>
           }
-          @if (!showYoY) {
-            <th class="num">Toplam</th>
-          }
+          <th class="num">Toplam</th>
         </tr>
       </thead>
       <tbody>
@@ -95,18 +90,9 @@
             <td></td>
             <td></td>
             @for (amt of getDisplayAmounts(mall.months); track $index) {
-              <td class="num">
-                {{ fmt(amt) }}
-                @if (showYoY) {
-                  <div class="yoy-inline" [ngClass]="pctClass(amt, prevMallMonth(mall.name, $index))">
-                    {{ fmtPct(amt, prevMallMonth(mall.name, $index)) }}
-                  </div>
-                }
-              </td>
+              <td class="num">{{ fmt(amt) }}</td>
             }
-            @if (!showYoY) {
-              <td class="num">{{ fmt(getTotal(getDisplayAmounts(mall.months))) }}</td>
-            }
+            <td class="num">{{ fmt(getTotal(getDisplayAmounts(mall.months))) }}</td>
           </tr>
 
           @if (isMallExpanded(mall.name)) {
@@ -121,18 +107,9 @@
                 <td></td>
                 <td></td>
                 @for (amt of getDisplayAmounts(lot.months); track $index) {
-                  <td class="num">
-                    {{ fmt(amt) }}
-                    @if (showYoY) {
-                      <div class="yoy-inline" [ngClass]="pctClass(amt, prevLotMonth(mall.name, lot.name, $index))">
-                        {{ fmtPct(amt, prevLotMonth(mall.name, lot.name, $index)) }}
-                      </div>
-                    }
-                  </td>
+                  <td class="num">{{ fmt(amt) }}</td>
                 }
-                @if (!showYoY) {
-                  <td class="num">{{ fmt(getTotal(getDisplayAmounts(lot.months))) }}</td>
-                }
+                <td class="num">{{ fmt(getTotal(getDisplayAmounts(lot.months))) }}</td>
               </tr>
 
               @if (isLotExpanded(mall.name + '|||' + lot.name)) {
@@ -155,18 +132,9 @@
                       </span>
                     </td>
                     @for (amt of getDisplayAmounts(brand.amounts); track $index) {
-                      <td class="num">
-                        {{ fmt(amt) }}
-                        @if (showYoY) {
-                          <div class="yoy-inline" [ngClass]="pctClass(amt, prevBrandMonth(mall.name, lot.name, brand.brand, $index))">
-                            {{ fmtPct(amt, prevBrandMonth(mall.name, lot.name, brand.brand, $index)) }}
-                          </div>
-                        }
-                      </td>
+                      <td class="num">{{ fmt(amt) }}</td>
                     }
-                    @if (!showYoY) {
-                      <td class="num total">{{ fmt(getTotal(getDisplayAmounts(brand.amounts))) }}</td>
-                    }
+                    <td class="num total">{{ fmt(getTotal(getDisplayAmounts(brand.amounts))) }}</td>
                   </tr>
 
                 }
@@ -181,18 +149,9 @@
           <td></td>
           <td></td>
           @for (amt of getDisplayAmounts(getGrandMonths()); track $index) {
-            <td class="num">
-              {{ fmt(amt) }}
-              @if (showYoY) {
-                <div class="yoy-inline" [ngClass]="pctClass(amt, prevGrandMonth($index))">
-                  {{ fmtPct(amt, prevGrandMonth($index)) }}
-                </div>
-              }
-            </td>
+            <td class="num">{{ fmt(amt) }}</td>
           }
-          @if (!showYoY) {
-            <td class="num">{{ fmt(getTotal(getDisplayAmounts(getGrandMonths()))) }}</td>
-          }
+          <td class="num">{{ fmt(getTotal(getDisplayAmounts(getGrandMonths()))) }}</td>
         </tr>
 
       </tbody>

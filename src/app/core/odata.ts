@@ -24,7 +24,7 @@ export class OdataService {
 
   getContracts() {
     const baseUrl = environment.odata.url.replace(/\/ContractTurnoverEntry.*/, '');
-    const url = `${baseUrl}/ContractList?$select=No,Lot_No,Area_m2,SectorName&$top=5000`;
+    const url = `${baseUrl}/ContractList?$select=No,SectorName,SubSectorName&$top=5000`;
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 }
