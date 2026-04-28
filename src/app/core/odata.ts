@@ -27,4 +27,11 @@ export class OdataService {
     const url = `${baseUrl}/ContractList?$select=No,SectorName,SubSectorName&$top=5000`;
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
+
+  getAging() {
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'CustLedgerECE')
+      + '?$filter=AmountLCY gt 0&$top=10000';
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
 }
