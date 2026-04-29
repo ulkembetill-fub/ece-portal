@@ -60,8 +60,8 @@ export class Aging implements OnInit {
     this.odata.getAging().subscribe({
       next: (res) => {
         this.allData = res.value || [];
-        this.malls = ['Tümü', ...new Set<string>(this.allData.map(d => d.MallCode).filter(Boolean))].sort();
-        this.invoiceTypes = ['Tümü', ...new Set<string>(this.allData.map(d => d.InvoiceType).filter(Boolean))].sort();
+        this.malls = ['Tümü', ...new Set<string>(this.allData.map(d => d.Mall_Code).filter(Boolean))].sort();
+        this.invoiceTypes = ['Tümü', ...new Set<string>(this.allData.map(d => d.Invoice_Type).filter(Boolean))].sort();
         this.buildTable();
         this.loading = false;
       },
@@ -74,19 +74,21 @@ export class Aging implements OnInit {
 
   buildTable() {
     let data = this.allData;
-    if (this.selectedMall !== 'Tümü') data = data.filter(d => d.MallCode === this.selectedMall);
-    if (this.selectedInvoiceType !== 'Tümü') data = data.filter(d => d.InvoiceType === this.selectedInvoiceType);
+    if (this.selectedMall !== 'Tümü') data = data.filter(d => d.Mall_Code === this.selectedMall);
+    if (this.selectedInvoiceType !== 'Tümü') data = data.filter(d => d.Invoice_Type === this.selectedInvoiceType);
 
     const mallMap = new Map<string, Map<string, Map<string, ContractRow>>>();
     const customerNames = new Map<string, string>();
 
     for (const d of data) {
-      const mall = d.MallCode || 'Bilinmiyor';
-      const custNo = d.CustomerNo || 'Bilinmiyor';
-      const custName = d.Name || custNo;
-      const contractKey = (d.ContractNo || '-') + '|' + (d.InvoiceType || '');
-      const month = new Date(d.PostingDate).getMonth();
-      const amount = d.AmountLCY || 0;
+      const mall = d.Mall_Code || 'Bilinmiyor';
+      const custNo = d.Customer_No || 'Bilinmiyor';
+      const custName = d.Customer_Name || custNo;
+      const contractKey = (d.Contract_No || '-') + '|' + (d.Invoice_Type || '');
+      const month = new Date(d.Posting_Date).getMonth();
+      const amount = d.Remaining_Amt_LCY || 0;
+
+      if (amount <= 0) continue;
 
       customerNames.set(custNo, custName);
 
@@ -95,8 +97,8 @@ export class Aging implements OnInit {
       if (!custMap.has(custNo)) custMap.set(custNo, new Map());
       const contractMap = custMap.get(custNo)!;
       if (!contractMap.has(contractKey)) contractMap.set(contractKey, {
-        contractNo: d.ContractNo || '-',
-        invoiceType: d.InvoiceType || '',
+        contractNo: d.Contract_No || '-',
+        invoiceType: d.Invoice_Type || '',
         months: Array(12).fill(0),
         total: 0
       });

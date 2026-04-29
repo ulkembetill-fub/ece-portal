@@ -30,8 +30,8 @@ export class OdataService {
 
   getAging() {
     const url = environment.odata.url
-      .replace('ContractTurnoverEntry', 'CustLedgerECE')
-      + `?$filter=PostingDate ge 2026-01-01 and PostingDate le 2026-12-31 and DocumentType eq 'Fatura'&$top=50000`;
+      .replace('ContractTurnoverEntry', 'CustomerLedgerEntries')
+      + `?$filter=Open eq true&$top=10000`;
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 }
