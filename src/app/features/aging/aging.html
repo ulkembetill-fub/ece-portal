@@ -1,23 +1,46 @@
 <div class="aging-wrap">
   <div class="aging-header">
-    <div class="header-left">
-      <h2>Aging Raporu</h2>
-      <span class="record-count" *ngIf="!loading && grandTotal > 0">{{ fmt(grandTotal) }} ₺ toplam bakiye</span>
+    <div class="header-top">
+      <div class="header-left">
+        <h2>Aging Raporu</h2>
+        <span class="record-count" *ngIf="!loading && grandTotal > 0">{{ fmt(grandTotal) }} ₺ toplam bakiye</span>
+      </div>
+      <div class="header-right">
+        <select [(ngModel)]="selectedYear" class="year-select">
+          <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+        </select>
+        <select [(ngModel)]="selectedMall" (change)="buildTable()">
+          <option *ngFor="let m of malls" [value]="m">{{ m }}</option>
+        </select>
+        <select [(ngModel)]="selectedInvoiceType" (change)="buildTable()">
+          <option *ngFor="let t of invoiceTypes" [value]="t">{{ t }}</option>
+        </select>
+        <button class="btn-load" (click)="loadData()" [disabled]="loading">
+          {{ loading ? 'Yükleniyor...' : '⟳ Veriyi Getir' }}
+        </button>
+        <button class="btn-excel" (click)="exportExcel()" *ngIf="grandTotal > 0">⬇ Excel</button>
+      </div>
     </div>
-    <div class="header-right">
-      <select [(ngModel)]="selectedYear" class="year-select">
-        <option *ngFor="let y of years" [value]="y">{{ y }}</option>
-      </select>
-      <select [(ngModel)]="selectedMall" (change)="buildTable()">
-        <option *ngFor="let m of malls" [value]="m">{{ m }}</option>
-      </select>
-      <select [(ngModel)]="selectedInvoiceType" (change)="buildTable()">
-        <option *ngFor="let t of invoiceTypes" [value]="t">{{ t }}</option>
-      </select>
-      <button class="btn-load" (click)="loadData()" [disabled]="loading">
-        {{ loading ? 'Yükleniyor...' : '⟳ Veriyi Getir' }}
-      </button>
-      <button class="btn-excel" (click)="exportExcel()" *ngIf="grandTotal > 0">⬇ Excel</button>
+    <div class="header-bottom">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Müşteri adı, kontrat no veya marka ara..."
+          [(ngModel)]="searchText"
+          (ngModelChange)="applySearch()"
+        />
+        <button class="search-clear" *ngIf="searchText" (click)="searchText=''; applySearch()">✕</button>
+      </div>
+      <div class="due-date-wrap">
+        <span class="due-date-label">📅 Vade Tarihi:</span>
+        <input class="due-date-input" type="text" [(ngModel)]="dueDate" placeholder="gg.aa.yyyy" />
+      </div>
+      <span class="search-result" *ngIf="searchText">
+        {{ filteredMallGroups.length }} AVM —
+        <span style="color: var(--accent);">{{ searchText }}</span> için sonuçlar
+      </span>
     </div>
   </div>
 
@@ -25,9 +48,13 @@
     <p>Yıl seçip "Veriyi Getir" butonuna tıklayın.</p>
   </div>
 
+  <div class="no-results" *ngIf="!loading && mallGroups.length > 0 && filteredMallGroups.length === 0">
+    <p>🔍 "<strong>{{ searchText }}</strong>" için sonuç bulunamadı.</p>
+  </div>
+
   <div class="error" *ngIf="error">{{ error }}</div>
 
-  <div class="table-wrap" *ngIf="!loading && mallGroups.length > 0">
+  <div class="table-wrap" *ngIf="!loading && filteredMallGroups.length > 0">
     <table>
       <thead>
         <tr>
@@ -37,20 +64,22 @@
           <th class="col-type">Fatura Türü</th>
           <th *ngFor="let m of months" class="col-month">{{ m }}</th>
           <th class="col-total">TOPLAM</th>
+          <th class="col-mail">Mail</th>
         </tr>
       </thead>
       <tbody>
-        <ng-container *ngFor="let g of mallGroups">
+        <ng-container *ngFor="let g of filteredMallGroups">
           <tr class="mall-row" (click)="toggleMall(g)">
             <td class="col-name">
               <span class="toggle">{{ g.expanded ? '▼' : '▶' }}</span>
-              <strong>{{ g.mallCode }}</strong>
+              <strong>{{ g.mallName || g.mallCode }}</strong>
             </td>
             <td class="col-brand"></td>
             <td class="col-lot"></td>
             <td class="col-type"></td>
             <td *ngFor="let v of g.months" class="col-month num">{{ fmt(v) }}</td>
             <td class="col-total num">{{ fmt(g.total) }}</td>
+            <td class="col-mail"></td>
           </tr>
           <ng-container *ngIf="g.expanded">
             <ng-container *ngFor="let c of g.customers">
@@ -66,6 +95,11 @@
                 <td class="col-type"></td>
                 <td *ngFor="let v of c.months" class="col-month num">{{ fmt(v) }}</td>
                 <td class="col-total num">{{ fmt(c.total) }}</td>
+                <td class="col-mail" (click)="$event.stopPropagation()">
+                  <button class="mail-btn mail-normal" title="Normal Mail" (click)="sendMail('normal', g.mallName || g.mallCode, c)">📧</button>
+                  <button class="mail-btn mail-ihtar" title="İhtar Mail" (click)="sendMail('ihtar', g.mallName || g.mallCode, c)">⚠️</button>
+                  <button class="mail-btn mail-icra" title="İcra Mail" (click)="sendMail('icra', g.mallName || g.mallCode, c)">⚖️</button>
+                </td>
               </tr>
               <ng-container *ngIf="c.expanded">
                 <tr *ngFor="let r of c.contracts" class="contract-row">
@@ -85,6 +119,7 @@
                   </td>
                   <td *ngFor="let v of r.months" class="col-month num">{{ fmt(v) }}</td>
                   <td class="col-total num">{{ fmt(r.total) }}</td>
+                  <td class="col-mail"></td>
                 </tr>
               </ng-container>
             </ng-container>
@@ -97,6 +132,7 @@
           <td class="col-type"></td>
           <td *ngFor="let v of grandMonths" class="col-month num">{{ fmt(v) }}</td>
           <td class="col-total num">{{ fmt(grandTotal) }}</td>
+          <td class="col-mail"></td>
         </tr>
       </tbody>
     </table>

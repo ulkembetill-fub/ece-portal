@@ -1,17 +1,32 @@
 .aging-wrap {
-  padding: 24px;
+  padding: 20px 24px;
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .aging-header {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.header-top {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
   gap: 12px;
+  width: 100%;
+}
+
+.header-bottom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
 }
 
 .header-left h2 {
@@ -80,12 +95,95 @@
 
 .btn-excel:hover { filter: brightness(0.9); }
 
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 9px;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.search-input {
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 28px 6px 28px;
+  font-size: 13px;
+  width: 280px;
+  outline: none;
+  transition: border-color 0.2s, width 0.2s;
+}
+
+.search-input:focus {
+  border-color: var(--accent3);
+  width: 340px;
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0;
+}
+
+.search-clear:hover { color: var(--text); }
+
+.search-result {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.due-date-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.due-date-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.due-date-input {
+  background: var(--bg-input);
+  color: var(--yellow);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  width: 110px;
+  outline: none;
+}
+
+.due-date-input:focus { border-color: var(--accent3); }
+
 .empty-state {
   text-align: center;
   color: var(--text-muted);
   padding: 60px;
   font-size: 14px;
 }
+
+.no-results {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px;
+  font-size: 13px;
+}
+
+.no-results strong { color: var(--accent); }
 
 .error {
   color: #ef4444;
@@ -146,6 +244,7 @@ td {
 .col-type { min-width: 120px; }
 .col-month { min-width: 90px; }
 .col-total { min-width: 110px; font-weight: 600; }
+.col-mail { min-width: 90px; text-align: center; }
 
 .mall-row { background: var(--row-mall); cursor: pointer; }
 .mall-row:hover { background: var(--bg-card3); }
@@ -210,3 +309,15 @@ td {
   font-size: 10px;
   color: var(--text-dim);
 }
+
+.mail-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: transform 0.1s;
+}
+
+.mail-btn:hover { transform: scale(1.2); }

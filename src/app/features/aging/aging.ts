@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { OdataService } from '../../core/odata';
 import * as XLSX from 'xlsx';
 
-const MONTHS = ['OCA','ŞUB','MAR','NİS','MAY','HAZ','TEM','AĞU','EYL','EKİ','KAS','ARA'];
+const MONTHS = ['OCA','SUB','MAR','NIS','MAY','HAZ','TEM','AGU','EYL','EKI','KAS','ARA'];
+const MONTHS_DISPLAY = ['OCA','ŞUB','MAR','NİS','MAY','HAZ','TEM','AĞU','EYL','EKİ','KAS','ARA'];
 
 interface ContractRow {
   contractNo: string;
@@ -27,6 +28,7 @@ interface CustomerRow {
 
 interface MallGroup {
   mallCode: string;
+  mallName: string;
   expanded: boolean;
   customers: CustomerRow[];
   months: number[];
@@ -45,34 +47,51 @@ export class Aging implements OnInit {
   error = '';
   allData: any[] = [];
   mallGroups: MallGroup[] = [];
+  filteredMallGroups: MallGroup[] = [];
   malls: string[] = [];
   invoiceTypes: string[] = [];
+  mallNames: Map<string, string> = new Map();
   selectedMall = 'Tümü';
   selectedInvoiceType = 'Tümü';
   selectedYear = 2026;
   years = [2026, 2025, 2024];
-  months = MONTHS;
+  searchText = '';
+  dueDate = '';
+  months = MONTHS_DISPLAY;
   grandMonths: number[] = Array(12).fill(0);
   grandTotal = 0;
 
   constructor(private odata: OdataService) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    this.dueDate = d.toLocaleDateString('tr-TR');
+
+    this.odata.getMalls().subscribe({
+      next: (res: any) => {
+        (res.value || []).forEach((m: any) => {
+          this.mallNames.set(m.Code, m.Name);
+        });
+      }
+    });
+  }
 
   loadData() {
     this.loading = true;
     this.error = '';
     this.mallGroups = [];
+    this.filteredMallGroups = [];
     this.grandTotal = 0;
     this.odata.getAging(this.selectedYear).subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.allData = res.value || [];
-        this.malls = ['Tümü', ...new Set<string>(this.allData.map(d => d.Mall_Code).filter(Boolean))].sort();
-        this.invoiceTypes = ['Tümü', ...new Set<string>(this.allData.map(d => d.Invoice_Type).filter(Boolean))].sort();
+        this.malls = ['Tümü', ...new Set<string>(this.allData.map((d: any) => d.Mall_Code).filter(Boolean))].sort();
+        this.invoiceTypes = ['Tümü', ...new Set<string>(this.allData.map((d: any) => d.Invoice_Type).filter(Boolean))].sort();
         this.buildTable();
         this.loading = false;
       },
-      error: (err) => {
+      error: (err: any) => {
         this.error = 'Veri yüklenemedi: ' + err.message;
         this.loading = false;
       }
@@ -81,8 +100,8 @@ export class Aging implements OnInit {
 
   buildTable() {
     let data = this.allData;
-    if (this.selectedMall !== 'Tümü') data = data.filter(d => d.Mall_Code === this.selectedMall);
-    if (this.selectedInvoiceType !== 'Tümü') data = data.filter(d => d.Invoice_Type === this.selectedInvoiceType);
+    if (this.selectedMall !== 'Tümü') data = data.filter((d: any) => d.Mall_Code === this.selectedMall);
+    if (this.selectedInvoiceType !== 'Tümü') data = data.filter((d: any) => d.Invoice_Type === this.selectedInvoiceType);
 
     const mallMap = new Map<string, Map<string, Map<string, ContractRow>>>();
     const customerNames = new Map<string, string>();
@@ -143,36 +162,106 @@ export class Aging implements OnInit {
 
       customers.sort((a, b) => b.total - a.total);
       const mallTotal = mallMonths.reduce((a, b) => a + b, 0);
-      this.mallGroups.push({ mallCode: mall, expanded: true, customers, months: mallMonths, total: mallTotal });
+      this.mallGroups.push({
+        mallCode: mall,
+        mallName: this.mallNames.get(mall) || mall,
+        expanded: true,
+        customers,
+        months: mallMonths,
+        total: mallTotal
+      });
       mallMonths.forEach((v, i) => this.grandMonths[i] += v);
       this.grandTotal += mallTotal;
     }
 
     this.mallGroups.sort((a, b) => a.mallCode.localeCompare(b.mallCode));
+    this.applySearch();
+  }
+
+  applySearch() {
+    const q = this.searchText.trim().toLowerCase();
+    if (!q) {
+      this.filteredMallGroups = this.mallGroups;
+      return;
+    }
+    this.filteredMallGroups = this.mallGroups
+      .map(g => {
+        const matchedCustomers = g.customers.filter(c =>
+          c.customerName.toLowerCase().includes(q) ||
+          c.customerNo.toLowerCase().includes(q) ||
+          c.contracts.some(r => r.brandName.toLowerCase().includes(q) || r.contractNo.toLowerCase().includes(q))
+        );
+        if (matchedCustomers.length === 0) return null;
+        return { ...g, customers: matchedCustomers, expanded: true };
+      })
+      .filter(g => g !== null) as MallGroup[];
+  }
+
+  sendMail(type: 'normal' | 'ihtar' | 'icra', mallName: string, customer: CustomerRow) {
+    const borc = this.fmt(customer.total);
+    const konu = encodeURIComponent(mallName + ' - ' + customer.customerName + ' BORC BAKIYENIZ HAKKINDA');
+
+    let body = '';
+    if (type === 'normal') {
+      body = 'Merhabalar;\n\nHesap ozeti borcunuzu hatirlatir,\n\nGuncel borc bakiyeniz: ' + borc + ' TL\n\nBorcunuzun ' + this.dueDate + ' tarihine kadar kapatilmasi konusunda desteklerinizi rica ederiz.\n\nIyi calismalar.';
+    } else if (type === 'ihtar') {
+      body = 'Merhabalar;\n\nHesap ozeti borcunuzu hatirlatir,\n\nGuncel borc bakiyeniz: ' + borc + ' TL\n\nBorcunuzun ' + this.dueDate + ' tarihine kadar kapatilmasi konusunda desteklerinizi rica ederiz, aksi takdirde uzulerek belirtmek isteriz ki borclariniz ile ilgili borc ihtarnamesi gonderilecektir.\n\nIyi calismalar.';
+    } else {
+      body = 'Merhabalar;\n\nHesap ozeti borcunuzu hatirlatir,\n\nGuncel borc bakiyeniz: ' + borc + ' TL\n\nBorcunuzun ' + this.dueDate + ' tarihine kadar kapatilmasi konusunda desteklerinizi rica ederiz, aksi takdirde uzulerek belirtmek isteriz ki borclariniz ile ilgili hukuki takip baslatilacaktir.\n\nIyi calismalar.';
+    }
+
+    const mailtoLink = 'mailto:?subject=' + konu + '&body=' + encodeURIComponent(body);
+    window.open(mailtoLink);
   }
 
   toggleMall(g: MallGroup) { g.expanded = !g.expanded; }
   toggleCustomer(c: CustomerRow) { c.expanded = !c.expanded; }
 
   fmt(n: number) {
-    return n === 0 ? '–' : n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return n === 0 ? '-' : n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   exportExcel() {
     const rows: any[] = [];
-    for (const g of this.mallGroups) {
-      const mallRow: any = { 'AVM': g.mallCode, 'Müşteri No': '', 'Müşteri Adı': '', 'Kontrat No': '', 'Marka': '', 'Lot': '', 'Mahal': '', 'Fatura Türü': '' };
-      g.months.forEach((v, i) => mallRow[MONTHS[i]] = v);
+    for (const g of this.filteredMallGroups) {
+      const mallRow: any = {};
+      mallRow['AVM'] = g.mallName;
+      mallRow['Musteri No'] = '';
+      mallRow['Musteri Adi'] = '';
+      mallRow['Kontrat No'] = '';
+      mallRow['Marka'] = '';
+      mallRow['Lot'] = '';
+      mallRow['Mahal'] = '';
+      mallRow['Fatura Turu'] = '';
+      MONTHS.forEach((m, i) => mallRow[m] = g.months[i]);
       mallRow['Toplam'] = g.total;
       rows.push(mallRow);
+
       for (const c of g.customers) {
-        const custRow: any = { 'AVM': '', 'Müşteri No': c.customerNo, 'Müşteri Adı': c.customerName, 'Kontrat No': '', 'Marka': '', 'Lot': '', 'Mahal': '', 'Fatura Türü': '' };
-        c.months.forEach((v, i) => custRow[MONTHS[i]] = v);
+        const custRow: any = {};
+        custRow['AVM'] = '';
+        custRow['Musteri No'] = c.customerNo;
+        custRow['Musteri Adi'] = c.customerName;
+        custRow['Kontrat No'] = '';
+        custRow['Marka'] = '';
+        custRow['Lot'] = '';
+        custRow['Mahal'] = '';
+        custRow['Fatura Turu'] = '';
+        MONTHS.forEach((m, i) => custRow[m] = c.months[i]);
         custRow['Toplam'] = c.total;
         rows.push(custRow);
+
         for (const r of c.contracts) {
-          const cRow: any = { 'AVM': '', 'Müşteri No': '', 'Müşteri Adı': '', 'Kontrat No': r.contractNo, 'Marka': r.brandName, 'Lot': r.lotNo, 'Mahal': r.lotLocationCode, 'Fatura Türü': r.invoiceType };
-          r.months.forEach((v, i) => cRow[MONTHS[i]] = v);
+          const cRow: any = {};
+          cRow['AVM'] = '';
+          cRow['Musteri No'] = '';
+          cRow['Musteri Adi'] = '';
+          cRow['Kontrat No'] = r.contractNo;
+          cRow['Marka'] = r.brandName;
+          cRow['Lot'] = r.lotNo;
+          cRow['Mahal'] = r.lotLocationCode;
+          cRow['Fatura Turu'] = r.invoiceType;
+          MONTHS.forEach((m, i) => cRow[m] = r.months[i]);
           cRow['Toplam'] = r.total;
           rows.push(cRow);
         }
@@ -181,6 +270,6 @@ export class Aging implements OnInit {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Aging');
-    XLSX.writeFile(wb, `aging-${this.selectedYear}.xlsx`);
+    XLSX.writeFile(wb, 'aging-' + this.selectedYear + '.xlsx');
   }
 }

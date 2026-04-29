@@ -34,4 +34,11 @@ export class OdataService {
       + `?$filter=Open eq true and Posting_Date ge ${year}-01-01 and Posting_Date le ${year}-12-31&$top=10000`;
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
+
+  getMalls() {
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'MallL%C4%B1st')
+      + `?$select=Code,Name&$top=100`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
 }
