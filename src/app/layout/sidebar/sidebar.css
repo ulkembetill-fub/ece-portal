@@ -63,6 +63,27 @@
 .sidebar-footer {
   padding: 16px 20px;
   border-top: 1px solid #1a2635;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.theme-toggle {
+  background: #1e2535;
+  border: 1px solid #2d3748;
+  color: #8fa3b8;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.theme-toggle:hover {
+  background: #2d3748;
+  color: #ffffff;
 }
 
 .footer-label {

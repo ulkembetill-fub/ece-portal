@@ -42,6 +42,17 @@
   cursor: pointer;
 }
 
+.year-select {
+  background: #1e2535;
+  color: #fbbf24;
+  border: 1px solid #2d3748;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .btn-load {
   background: #3b82f6;
   color: #fff;
@@ -130,6 +141,8 @@ td {
 }
 
 .col-name { min-width: 260px; }
+.col-brand { min-width: 140px; }
+.col-lot { min-width: 120px; }
 .col-type { min-width: 120px; }
 .col-month { min-width: 90px; }
 .col-total { min-width: 110px; font-weight: 600; }
@@ -179,4 +192,21 @@ td {
   border-radius: 4px;
   padding: 2px 8px;
   font-size: 11px;
+}
+
+.brand-name {
+  font-size: 11px;
+  color: #a78bfa;
+  font-weight: 500;
+}
+
+.lot-info {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: #8fa3b8;
+}
+
+.lot-type {
+  font-size: 10px;
+  color: #64748b;
 }

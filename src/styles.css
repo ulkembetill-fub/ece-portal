@@ -1,3 +1,33 @@
+:root {
+  --bg-main: #0f1117;
+  --bg-sidebar: #0f1923;
+  --bg-card: #111827;
+  --bg-input: #1e2535;
+  --border: #1e2d42;
+  --text: #e2e8f0;
+  --text-muted: #8fa3b8;
+  --text-dim: #64748b;
+  --accent: #93c5fd;
+  --accent-dark: #60a5fa;
+  --green: #16a34a;
+  --yellow: #fbbf24;
+}
+
+[data-theme="light"] {
+  --bg-main: #f1f5f9;
+  --bg-sidebar: #1e293b;
+  --bg-card: #ffffff;
+  --bg-input: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-dim: #94a3b8;
+  --accent: #2563eb;
+  --accent-dark: #1d4ed8;
+  --green: #15803d;
+  --yellow: #b45309;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -8,7 +38,9 @@ html, body {
   height: 100%;
   font-family: 'Segoe UI', sans-serif;
   overflow: hidden;
-  background: #0f1117;
+  background: var(--bg-main);
+  color: var(--text);
+  transition: background 0.2s, color 0.2s;
 }
 
 app-root {
@@ -24,12 +56,12 @@ app-sidebar {
   width: 240px;
   flex-shrink: 0;
   height: 100vh;
-  background: #0f1923;
+  background: var(--bg-sidebar);
 }
 
 main {
   flex: 1;
   height: 100vh;
   overflow: hidden;
-  background: #0f1117;
+  background: var(--bg-main);
 }

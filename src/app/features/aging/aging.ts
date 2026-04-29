@@ -8,6 +8,9 @@ const MONTHS = ['OCA','ŞUB','MAR','NİS','MAY','HAZ','TEM','AĞU','EYL','EKİ',
 
 interface ContractRow {
   contractNo: string;
+  brandName: string;
+  lotNo: string;
+  lotLocationCode: string;
   invoiceType: string;
   months: number[];
   total: number;
@@ -46,6 +49,8 @@ export class Aging implements OnInit {
   invoiceTypes: string[] = [];
   selectedMall = 'Tümü';
   selectedInvoiceType = 'Tümü';
+  selectedYear = 2026;
+  years = [2026, 2025, 2024];
   months = MONTHS;
   grandMonths: number[] = Array(12).fill(0);
   grandTotal = 0;
@@ -57,7 +62,9 @@ export class Aging implements OnInit {
   loadData() {
     this.loading = true;
     this.error = '';
-    this.odata.getAging().subscribe({
+    this.mallGroups = [];
+    this.grandTotal = 0;
+    this.odata.getAging(this.selectedYear).subscribe({
       next: (res) => {
         this.allData = res.value || [];
         this.malls = ['Tümü', ...new Set<string>(this.allData.map(d => d.Mall_Code).filter(Boolean))].sort();
@@ -98,6 +105,9 @@ export class Aging implements OnInit {
       const contractMap = custMap.get(custNo)!;
       if (!contractMap.has(contractKey)) contractMap.set(contractKey, {
         contractNo: d.Contract_No || '-',
+        brandName: d.Brand_Name || '',
+        lotNo: d.Lot_No || '',
+        lotLocationCode: d.Lot_Location_Code || '',
         invoiceType: d.Invoice_Type || '',
         months: Array(12).fill(0),
         total: 0
@@ -151,17 +161,17 @@ export class Aging implements OnInit {
   exportExcel() {
     const rows: any[] = [];
     for (const g of this.mallGroups) {
-      const mallRow: any = { 'AVM': g.mallCode, 'Müşteri No': '', 'Müşteri Adı': '', 'Kontrat No': '', 'Fatura Türü': '' };
+      const mallRow: any = { 'AVM': g.mallCode, 'Müşteri No': '', 'Müşteri Adı': '', 'Kontrat No': '', 'Marka': '', 'Lot': '', 'Mahal': '', 'Fatura Türü': '' };
       g.months.forEach((v, i) => mallRow[MONTHS[i]] = v);
       mallRow['Toplam'] = g.total;
       rows.push(mallRow);
       for (const c of g.customers) {
-        const custRow: any = { 'AVM': '', 'Müşteri No': c.customerNo, 'Müşteri Adı': c.customerName, 'Kontrat No': '', 'Fatura Türü': '' };
+        const custRow: any = { 'AVM': '', 'Müşteri No': c.customerNo, 'Müşteri Adı': c.customerName, 'Kontrat No': '', 'Marka': '', 'Lot': '', 'Mahal': '', 'Fatura Türü': '' };
         c.months.forEach((v, i) => custRow[MONTHS[i]] = v);
         custRow['Toplam'] = c.total;
         rows.push(custRow);
         for (const r of c.contracts) {
-          const cRow: any = { 'AVM': '', 'Müşteri No': '', 'Müşteri Adı': '', 'Kontrat No': r.contractNo, 'Fatura Türü': r.invoiceType };
+          const cRow: any = { 'AVM': '', 'Müşteri No': '', 'Müşteri Adı': '', 'Kontrat No': r.contractNo, 'Marka': r.brandName, 'Lot': r.lotNo, 'Mahal': r.lotLocationCode, 'Fatura Türü': r.invoiceType };
           r.months.forEach((v, i) => cRow[MONTHS[i]] = v);
           cRow['Toplam'] = r.total;
           rows.push(cRow);
@@ -171,6 +181,6 @@ export class Aging implements OnInit {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Aging');
-    XLSX.writeFile(wb, 'aging-2026.xlsx');
+    XLSX.writeFile(wb, `aging-${this.selectedYear}.xlsx`);
   }
 }

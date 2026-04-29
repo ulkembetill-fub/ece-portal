@@ -28,10 +28,10 @@ export class OdataService {
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 
-  getAging() {
+  getAging(year: number) {
     const url = environment.odata.url
       .replace('ContractTurnoverEntry', 'CustomerLedgerEntries')
-      + `?$filter=Open eq true&$top=10000`;
+      + `?$filter=Open eq true and Posting_Date ge ${year}-01-01 and Posting_Date le ${year}-12-31&$top=10000`;
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 }

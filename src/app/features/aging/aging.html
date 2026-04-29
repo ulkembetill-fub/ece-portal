@@ -1,10 +1,13 @@
 <div class="aging-wrap">
   <div class="aging-header">
     <div class="header-left">
-      <h2>Aging Raporu — 2026</h2>
-      <span class="record-count" *ngIf="!loading && grandTotal > 0">{{ fmt(grandTotal) }} ₺ toplam fatura</span>
+      <h2>Aging Raporu</h2>
+      <span class="record-count" *ngIf="!loading && grandTotal > 0">{{ fmt(grandTotal) }} ₺ toplam bakiye</span>
     </div>
     <div class="header-right">
+      <select [(ngModel)]="selectedYear" class="year-select">
+        <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+      </select>
       <select [(ngModel)]="selectedMall" (change)="buildTable()">
         <option *ngFor="let m of malls" [value]="m">{{ m }}</option>
       </select>
@@ -19,7 +22,7 @@
   </div>
 
   <div class="empty-state" *ngIf="!loading && mallGroups.length === 0 && !error">
-    <p>Veriyi görmek için "Veriyi Getir" butonuna tıklayın.</p>
+    <p>Yıl seçip "Veriyi Getir" butonuna tıklayın.</p>
   </div>
 
   <div class="error" *ngIf="error">{{ error }}</div>
@@ -29,6 +32,8 @@
       <thead>
         <tr>
           <th class="col-name">AVM / Müşteri / Kontrat</th>
+          <th class="col-brand">Marka</th>
+          <th class="col-lot">Lot / Mahal</th>
           <th class="col-type">Fatura Türü</th>
           <th *ngFor="let m of months" class="col-month">{{ m }}</th>
           <th class="col-total">TOPLAM</th>
@@ -41,6 +46,8 @@
               <span class="toggle">{{ g.expanded ? '▼' : '▶' }}</span>
               <strong>{{ g.mallCode }}</strong>
             </td>
+            <td class="col-brand"></td>
+            <td class="col-lot"></td>
             <td class="col-type"></td>
             <td *ngFor="let v of g.months" class="col-month num">{{ fmt(v) }}</td>
             <td class="col-total num">{{ fmt(g.total) }}</td>
@@ -54,6 +61,8 @@
                   <span class="cust-no">{{ c.customerNo }}</span>
                   <span class="cust-name">{{ c.customerName }}</span>
                 </td>
+                <td class="col-brand"></td>
+                <td class="col-lot"></td>
                 <td class="col-type"></td>
                 <td *ngFor="let v of c.months" class="col-month num">{{ fmt(v) }}</td>
                 <td class="col-total num">{{ fmt(c.total) }}</td>
@@ -63,6 +72,13 @@
                   <td class="col-name">
                     <span class="indent2"></span>
                     {{ r.contractNo }}
+                  </td>
+                  <td class="col-brand">
+                    <span class="brand-name" *ngIf="r.brandName">{{ r.brandName }}</span>
+                  </td>
+                  <td class="col-lot">
+                    <span class="lot-info" *ngIf="r.lotNo">{{ r.lotNo }}</span>
+                    <span class="lot-type" *ngIf="r.lotLocationCode"> · {{ r.lotLocationCode }}</span>
                   </td>
                   <td class="col-type">
                     <span class="invoice-badge">{{ r.invoiceType }}</span>
@@ -76,6 +92,8 @@
         </ng-container>
         <tr class="total-row">
           <td class="col-name"><strong>GENEL TOPLAM</strong></td>
+          <td class="col-brand"></td>
+          <td class="col-lot"></td>
           <td class="col-type"></td>
           <td *ngFor="let v of grandMonths" class="col-month num">{{ fmt(v) }}</td>
           <td class="col-total num">{{ fmt(grandTotal) }}</td>

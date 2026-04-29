@@ -26,6 +26,9 @@
   </ul>
 
   <div class="sidebar-footer">
+    <button class="theme-toggle" (click)="toggleTheme()">
+      {{ isDark ? '☀️ Aydınlık' : '🌙 Karanlık' }}
+    </button>
     <div class="footer-label">ECE Türkiye</div>
     <div class="footer-sub">Property Management</div>
   </div>
