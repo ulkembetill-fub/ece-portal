@@ -1,1 +1,86 @@
-<p>aging works!</p>
+<div class="aging-wrap">
+  <div class="aging-header">
+    <div class="header-left">
+      <h2>Aging Raporu — 2026</h2>
+      <span class="record-count" *ngIf="!loading && grandTotal > 0">{{ fmt(grandTotal) }} ₺ toplam fatura</span>
+    </div>
+    <div class="header-right">
+      <select [(ngModel)]="selectedMall" (change)="buildTable()">
+        <option *ngFor="let m of malls" [value]="m">{{ m }}</option>
+      </select>
+      <select [(ngModel)]="selectedInvoiceType" (change)="buildTable()">
+        <option *ngFor="let t of invoiceTypes" [value]="t">{{ t }}</option>
+      </select>
+      <button class="btn-load" (click)="loadData()" [disabled]="loading">
+        {{ loading ? 'Yükleniyor...' : '⟳ Veriyi Getir' }}
+      </button>
+      <button class="btn-excel" (click)="exportExcel()" *ngIf="grandTotal > 0">⬇ Excel</button>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && mallGroups.length === 0 && !error">
+    <p>Veriyi görmek için "Veriyi Getir" butonuna tıklayın.</p>
+  </div>
+
+  <div class="error" *ngIf="error">{{ error }}</div>
+
+  <div class="table-wrap" *ngIf="!loading && mallGroups.length > 0">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-name">AVM / Müşteri / Kontrat</th>
+          <th class="col-type">Fatura Türü</th>
+          <th *ngFor="let m of months" class="col-month">{{ m }}</th>
+          <th class="col-total">TOPLAM</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let g of mallGroups">
+          <tr class="mall-row" (click)="toggleMall(g)">
+            <td class="col-name">
+              <span class="toggle">{{ g.expanded ? '▼' : '▶' }}</span>
+              <strong>{{ g.mallCode }}</strong>
+            </td>
+            <td class="col-type"></td>
+            <td *ngFor="let v of g.months" class="col-month num">{{ fmt(v) }}</td>
+            <td class="col-total num">{{ fmt(g.total) }}</td>
+          </tr>
+          <ng-container *ngIf="g.expanded">
+            <ng-container *ngFor="let c of g.customers">
+              <tr class="customer-row" (click)="toggleCustomer(c)">
+                <td class="col-name">
+                  <span class="indent"></span>
+                  <span class="toggle">{{ c.expanded ? '▼' : '▶' }}</span>
+                  <span class="cust-no">{{ c.customerNo }}</span>
+                  <span class="cust-name">{{ c.customerName }}</span>
+                </td>
+                <td class="col-type"></td>
+                <td *ngFor="let v of c.months" class="col-month num">{{ fmt(v) }}</td>
+                <td class="col-total num">{{ fmt(c.total) }}</td>
+              </tr>
+              <ng-container *ngIf="c.expanded">
+                <tr *ngFor="let r of c.contracts" class="contract-row">
+                  <td class="col-name">
+                    <span class="indent2"></span>
+                    {{ r.contractNo }}
+                  </td>
+                  <td class="col-type">
+                    <span class="invoice-badge">{{ r.invoiceType }}</span>
+                  </td>
+                  <td *ngFor="let v of r.months" class="col-month num">{{ fmt(v) }}</td>
+                  <td class="col-total num">{{ fmt(r.total) }}</td>
+                </tr>
+              </ng-container>
+            </ng-container>
+          </ng-container>
+        </ng-container>
+        <tr class="total-row">
+          <td class="col-name"><strong>GENEL TOPLAM</strong></td>
+          <td class="col-type"></td>
+          <td *ngFor="let v of grandMonths" class="col-month num">{{ fmt(v) }}</td>
+          <td class="col-total num">{{ fmt(grandTotal) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

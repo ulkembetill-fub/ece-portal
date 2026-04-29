@@ -1,0 +1,182 @@
+.aging-wrap {
+  padding: 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aging-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header-left h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.record-count {
+  font-size: 13px;
+  color: #8fa3b8;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.header-right select {
+  background: #1e2535;
+  color: #e8edf5;
+  border: 1px solid #2d3748;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-load {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-load:hover { background: #2563eb; }
+.btn-load:disabled { background: #1e3a5f; color: #8fa3b8; cursor: not-allowed; }
+
+.btn-excel {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-excel:hover { background: #15803d; }
+
+.empty-state {
+  text-align: center;
+  color: #8fa3b8;
+  padding: 60px;
+  font-size: 14px;
+}
+
+.error {
+  color: #ef4444;
+  padding: 16px;
+  background: #1e2535;
+  border-radius: 8px;
+}
+
+.table-wrap {
+  overflow: auto;
+  flex: 1;
+  border-radius: 10px;
+  border: 1px solid #1e2535;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #0f1923;
+}
+
+th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8fa3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #1e2535;
+  white-space: nowrap;
+}
+
+th.col-month, th.col-total { text-align: right; }
+
+td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #1a2233;
+  white-space: nowrap;
+}
+
+.num {
+  text-align: right;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
+.col-name { min-width: 260px; }
+.col-type { min-width: 120px; }
+.col-month { min-width: 90px; }
+.col-total { min-width: 110px; font-weight: 600; }
+
+.mall-row { background: #0f1923; cursor: pointer; }
+.mall-row:hover { background: #1a2535; }
+.mall-row td { color: #93c5fd; font-weight: 600; }
+.mall-row .col-total { color: #60a5fa; }
+
+.customer-row { background: #111827; cursor: pointer; }
+.customer-row:hover { background: #1e2535; }
+.customer-row td { color: #d1d5db; }
+
+.contract-row { background: #0d1520; }
+.contract-row:hover { background: #1a2233; }
+.contract-row td { color: #9ca3af; }
+
+.total-row { background: #0f1923; }
+.total-row td {
+  color: #fbbf24;
+  font-weight: 700;
+  border-top: 2px solid #2d3748;
+}
+
+.toggle {
+  font-size: 10px;
+  margin-right: 6px;
+  color: #8fa3b8;
+}
+
+.indent { display: inline-block; width: 16px; }
+.indent2 { display: inline-block; width: 32px; }
+
+.cust-no {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: #8fa3b8;
+  margin-right: 8px;
+}
+
+.cust-name { color: #e2e8f0; }
+
+.invoice-badge {
+  background: #1e2535;
+  color: #93c5fd;
+  border: 1px solid #2d3748;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+}
