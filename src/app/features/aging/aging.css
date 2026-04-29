@@ -17,12 +17,12 @@
 .header-left h2 {
   font-size: 20px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text);
 }
 
 .record-count {
   font-size: 13px;
-  color: #8fa3b8;
+  color: var(--text-muted);
 }
 
 .header-right {
@@ -33,9 +33,9 @@
 }
 
 .header-right select {
-  background: #1e2535;
-  color: #e8edf5;
-  border: 1px solid #2d3748;
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 13px;
@@ -43,9 +43,9 @@
 }
 
 .year-select {
-  background: #1e2535;
-  color: #fbbf24;
-  border: 1px solid #2d3748;
+  background: var(--bg-input);
+  color: var(--yellow);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 13px;
@@ -54,7 +54,7 @@
 }
 
 .btn-load {
-  background: #3b82f6;
+  background: var(--accent3);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -65,10 +65,10 @@
 }
 
 .btn-load:hover { background: #2563eb; }
-.btn-load:disabled { background: #1e3a5f; color: #8fa3b8; cursor: not-allowed; }
+.btn-load:disabled { background: var(--bg-input); color: var(--text-muted); cursor: not-allowed; }
 
 .btn-excel {
-  background: #16a34a;
+  background: var(--green);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -78,11 +78,11 @@
   font-weight: 500;
 }
 
-.btn-excel:hover { background: #15803d; }
+.btn-excel:hover { filter: brightness(0.9); }
 
 .empty-state {
   text-align: center;
-  color: #8fa3b8;
+  color: var(--text-muted);
   padding: 60px;
   font-size: 14px;
 }
@@ -90,7 +90,7 @@
 .error {
   color: #ef4444;
   padding: 16px;
-  background: #1e2535;
+  background: var(--bg-input);
   border-radius: 8px;
 }
 
@@ -98,7 +98,7 @@
   overflow: auto;
   flex: 1;
   border-radius: 10px;
-  border: 1px solid #1e2535;
+  border: 1px solid var(--border);
 }
 
 table {
@@ -111,7 +111,7 @@ thead {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: #0f1923;
+  background: var(--bg-header);
 }
 
 th {
@@ -119,10 +119,10 @@ th {
   text-align: left;
   font-size: 11px;
   font-weight: 600;
-  color: #8fa3b8;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid #1e2535;
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
@@ -130,7 +130,7 @@ th.col-month, th.col-total { text-align: right; }
 
 td {
   padding: 8px 12px;
-  border-bottom: 1px solid #1a2233;
+  border-bottom: 1px solid var(--border3);
   white-space: nowrap;
 }
 
@@ -147,30 +147,30 @@ td {
 .col-month { min-width: 90px; }
 .col-total { min-width: 110px; font-weight: 600; }
 
-.mall-row { background: #0f1923; cursor: pointer; }
-.mall-row:hover { background: #1a2535; }
-.mall-row td { color: #93c5fd; font-weight: 600; }
-.mall-row .col-total { color: #60a5fa; }
+.mall-row { background: var(--row-mall); cursor: pointer; }
+.mall-row:hover { background: var(--bg-card3); }
+.mall-row td { color: var(--accent); font-weight: 600; }
+.mall-row .col-total { color: var(--accent2); }
 
-.customer-row { background: #111827; cursor: pointer; }
-.customer-row:hover { background: #1e2535; }
-.customer-row td { color: #d1d5db; }
+.customer-row { background: var(--row-lot); cursor: pointer; }
+.customer-row:hover { background: var(--bg-card3); }
+.customer-row td { color: var(--text); }
 
-.contract-row { background: #0d1520; }
-.contract-row:hover { background: #1a2233; }
-.contract-row td { color: #9ca3af; }
+.contract-row { background: var(--row-brand); }
+.contract-row:hover { background: var(--bg-card3); }
+.contract-row td { color: var(--text-muted); }
 
-.total-row { background: #0f1923; }
+.total-row { background: var(--row-total); }
 .total-row td {
-  color: #fbbf24;
+  color: var(--yellow);
   font-weight: 700;
-  border-top: 2px solid #2d3748;
+  border-top: 2px solid var(--border2);
 }
 
 .toggle {
   font-size: 10px;
   margin-right: 6px;
-  color: #8fa3b8;
+  color: var(--text-muted);
 }
 
 .indent { display: inline-block; width: 16px; }
@@ -179,16 +179,16 @@ td {
 .cust-no {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
-  color: #8fa3b8;
+  color: var(--text-muted);
   margin-right: 8px;
 }
 
-.cust-name { color: #e2e8f0; }
+.cust-name { color: var(--text); }
 
 .invoice-badge {
-  background: #1e2535;
-  color: #93c5fd;
-  border: 1px solid #2d3748;
+  background: var(--bg-input);
+  color: var(--accent);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 2px 8px;
   font-size: 11px;
@@ -196,17 +196,17 @@ td {
 
 .brand-name {
   font-size: 11px;
-  color: #a78bfa;
+  color: var(--purple);
   font-weight: 500;
 }
 
 .lot-info {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
-  color: #8fa3b8;
+  color: var(--text-muted);
 }
 
 .lot-type {
   font-size: 10px;
-  color: #64748b;
+  color: var(--text-dim);
 }

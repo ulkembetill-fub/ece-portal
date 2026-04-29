@@ -3,27 +3,27 @@
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
-  background: #0f1117;
-  color: #e8edf5;
+  background: var(--bg-main);
+  color: var(--text);
 }
 
 .stats-bar {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1px;
-  background: #2a3347;
-  border-bottom: 1px solid #2a3347;
+  background: var(--border);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .stat-card {
-  background: #161b27;
+  background: var(--bg-card2);
   padding: 16px 20px;
 }
 
 .stat-label {
   font-size: 10px;
-  color: #7a8ba8;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 6px;
@@ -32,19 +32,19 @@
 .stat-value {
   font-size: 22px;
   font-weight: 600;
-  color: #e8edf5;
+  color: var(--text);
   font-family: monospace;
 }
 
 .stat-sub {
   font-size: 11px;
-  color: #4a5568;
+  color: var(--text-dim);
   margin-top: 3px;
 }
 
 .toolbar {
-  background: #161b27;
-  border-bottom: 1px solid #2a3347;
+  background: var(--bg-card2);
+  border-bottom: 1px solid var(--border);
   padding: 10px 20px;
   display: flex;
   gap: 12px;
@@ -63,28 +63,28 @@
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 4px;
-  border: 1px solid #3a4660;
+  border: 1px solid var(--border);
   background: transparent;
-  color: #7a8ba8;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .year-tab.active {
-  background: #3b82f6;
+  background: var(--accent3);
   color: #fff;
-  border-color: #3b82f6;
+  border-color: var(--accent3);
 }
 
 .year-tab:hover:not(.active) {
-  border-color: #3b82f6;
-  color: #e8edf5;
+  border-color: var(--accent3);
+  color: var(--text);
 }
 
 .btn {
   background: transparent;
-  color: #7a8ba8;
-  border: 1px solid #3a4660;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 5px 12px;
   font-size: 12px;
@@ -93,19 +93,19 @@
 }
 
 .btn:hover {
-  color: #e8edf5;
-  border-color: #3b82f6;
+  color: var(--text);
+  border-color: var(--accent3);
 }
 
 .btn-excel {
-  color: #10b981;
-  border-color: #10b981;
+  color: var(--green);
+  border-color: var(--green);
 }
 
 .btn-excel:hover {
   background: #10b98122;
-  border-color: #10b981;
-  color: #10b981;
+  border-color: var(--green);
+  color: var(--green);
 }
 
 .filter-group {
@@ -115,20 +115,18 @@
   margin-left: auto;
 }
 
-.filter-group + .filter-group {
-  margin-left: 0;
-}
+.filter-group + .filter-group { margin-left: 0; }
 
 .filter-label {
   font-size: 11px;
-  color: #7a8ba8;
+  color: var(--text-muted);
   font-family: monospace;
 }
 
 select {
-  background: #1e2535;
-  color: #e8edf5;
-  border: 1px solid #3a4660;
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 5px 10px;
   font-size: 12px;
@@ -136,9 +134,7 @@ select {
   outline: none;
 }
 
-select:focus {
-  border-color: #3b82f6;
-}
+select:focus { border-color: var(--accent3); }
 
 .table-wrap {
   flex: 1;
@@ -154,14 +150,14 @@ table {
 thead th {
   position: sticky;
   top: 0;
-  background: #0d1a30;
-  color: #7a8ba8;
+  background: var(--bg-header);
+  color: var(--text-muted);
   padding: 10px 12px;
   text-align: left;
   font-size: 10px;
   font-weight: 500;
   white-space: nowrap;
-  border-bottom: 2px solid #1a3a6b;
+  border-bottom: 2px solid var(--border2);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -169,66 +165,66 @@ thead th {
 thead th.num { text-align: right; }
 
 tr.mall-row {
-  background: #111827;
+  background: var(--row-mall);
   cursor: pointer;
 }
-tr.mall-row:hover { background: #1a2535; }
+tr.mall-row:hover { background: var(--bg-card3); }
 tr.mall-row td {
   padding: 9px 12px;
   font-weight: 600;
-  color: #bfdbfe;
+  color: var(--accent2);
   font-family: monospace;
   font-size: 11px;
-  border-bottom: 1px solid #1a3a6b;
+  border-bottom: 1px solid var(--border2);
 }
 
 tr.lot-row {
-  background: #141e30;
+  background: var(--row-lot);
   cursor: pointer;
 }
-tr.lot-row:hover { background: #1a2840; }
+tr.lot-row:hover { background: var(--bg-card3); }
 tr.lot-row td {
   padding: 8px 12px;
   font-weight: 500;
-  color: #93c5fd;
-  border-bottom: 1px solid #2a3347;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
   font-size: 11px;
 }
 
-tr.brand-row { background: #0f1117; }
-tr.brand-row:hover { background: #141a24; }
+tr.brand-row { background: var(--row-brand); }
+tr.brand-row:hover { background: var(--bg-card3); }
 tr.brand-row td {
   padding: 7px 12px;
-  color: #7a8ba8;
-  border-bottom: 1px solid #1a2035;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border3);
   font-size: 12px;
 }
 
-tr.total-row { background: #0a1628; }
+tr.total-row { background: var(--row-total); }
 tr.total-row td {
   padding: 10px 12px;
   font-weight: 600;
   font-family: monospace;
-  color: #bfdbfe;
-  border-top: 2px solid #1a3a6b;
+  color: var(--accent2);
+  border-top: 2px solid var(--border2);
   font-size: 11px;
 }
 
 td.num {
   text-align: right;
   font-family: monospace;
-  color: #e8edf5;
+  color: var(--text);
 }
 
 td.total {
   font-weight: 600;
-  color: #bfdbfe;
+  color: var(--accent2);
 }
 
 .expand-icon {
   font-size: 9px;
   margin-right: 6px;
-  color: #4a5568;
+  color: var(--text-dim);
 }
 
 .badge {
@@ -242,8 +238,8 @@ td.total {
 
 .btn-yoy-active {
   background: #6366f122;
-  color: #818cf8;
-  border-color: #6366f1;
+  color: var(--purple);
+  border-color: var(--purple);
 }
 
 .btn-yoy-active:hover {
@@ -253,18 +249,18 @@ td.total {
 }
 
 thead th.yoy-header {
-  color: #818cf8;
-  border-left: 1px solid #2a3347;
+  color: var(--purple);
+  border-left: 1px solid var(--border);
 }
 
 td.yoy-prev {
-  color: #4a5568;
+  color: var(--text-dim);
   font-family: monospace;
-  border-left: 1px solid #1a2035;
+  border-left: 1px solid var(--border3);
 }
 
 .yoy-up {
-  color: #10b981 !important;
+  color: var(--green) !important;
   font-family: monospace;
   font-weight: 600;
 }
@@ -276,7 +272,7 @@ td.yoy-prev {
 }
 
 .yoy-neutral {
-  color: #4a5568 !important;
+  color: var(--text-dim) !important;
   font-family: monospace;
 }
 
