@@ -9,10 +9,10 @@
         <select [(ngModel)]="selectedYear" class="year-select">
           <option *ngFor="let y of years" [value]="y">{{ y }}</option>
         </select>
-        <select [(ngModel)]="selectedMall" (change)="buildTable()">
+        <select [(ngModel)]="selectedMall" (change)="buildTable(); buildTableNeg()">
           <option *ngFor="let m of malls" [value]="m">{{ m }}</option>
         </select>
-        <select [(ngModel)]="selectedInvoiceType" (change)="buildTable()">
+        <select [(ngModel)]="selectedInvoiceType" (change)="buildTable(); buildTableNeg()">
           <option *ngFor="let t of invoiceTypes" [value]="t">{{ t }}</option>
         </select>
         <button class="btn-load" (click)="loadData()" [disabled]="loading">
@@ -48,93 +48,176 @@
     <p>Yıl seçip "Veriyi Getir" butonuna tıklayın.</p>
   </div>
 
-  <div class="no-results" *ngIf="!loading && mallGroups.length > 0 && filteredMallGroups.length === 0">
-    <p>🔍 "<strong>{{ searchText }}</strong>" için sonuç bulunamadı.</p>
+  <div class="no-results" *ngIf="!loading && mallGroups.length > 0 && filteredMallGroups.length === 0 && !searchText">
   </div>
 
   <div class="error" *ngIf="error">{{ error }}</div>
 
-  <div class="table-wrap" *ngIf="!loading && filteredMallGroups.length > 0">
-    <table>
-      <thead>
-        <tr>
-          <th class="col-name">AVM / Müşteri / Kontrat</th>
-          <th class="col-brand">Marka</th>
-          <th class="col-lot">Lot / Mahal</th>
-          <th class="col-type">Fatura Türü</th>
-          <th *ngFor="let m of months" class="col-month">{{ m }}</th>
-          <th class="col-total">TOPLAM</th>
-          <th class="col-mail">Mail</th>
-        </tr>
-      </thead>
-      <tbody>
-        <ng-container *ngFor="let g of filteredMallGroups">
-          <tr class="mall-row" (click)="toggleMall(g)">
-            <td class="col-name">
-              <span class="toggle">{{ g.expanded ? '▼' : '▶' }}</span>
-              <strong>{{ g.mallName || g.mallCode }}</strong>
-            </td>
-            <td class="col-brand"></td>
-            <td class="col-lot"></td>
-            <td class="col-type"></td>
-            <td *ngFor="let v of g.months" class="col-month num">{{ fmt(v) }}</td>
-            <td class="col-total num">{{ fmt(g.total) }}</td>
-            <td class="col-mail"></td>
+  <!-- BORÇLULAR TABLOSU -->
+  <div class="table-section" *ngIf="!loading && filteredMallGroups.length > 0">
+    <div class="table-section-title">
+      <span class="section-dot dot-red"></span>
+      Açık Bakiyeler — Borçlular
+      <span class="section-total">{{ fmt(grandTotal) }} ₺</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-name">AVM / Müşteri / Kontrat</th>
+            <th class="col-brand">Marka</th>
+            <th class="col-lot">Lot / Mahal</th>
+            <th class="col-type">Fatura Türü</th>
+            <th *ngFor="let m of months" class="col-month">{{ m }}</th>
+            <th class="col-total">TOPLAM</th>
+            <th class="col-mail">Mail</th>
           </tr>
-          <ng-container *ngIf="g.expanded">
-            <ng-container *ngFor="let c of g.customers">
-              <tr class="customer-row" (click)="toggleCustomer(c)">
-                <td class="col-name">
-                  <span class="indent"></span>
-                  <span class="toggle">{{ c.expanded ? '▼' : '▶' }}</span>
-                  <span class="cust-no">{{ c.customerNo }}</span>
-                  <span class="cust-name">{{ c.customerName }}</span>
-                </td>
-                <td class="col-brand"></td>
-                <td class="col-lot"></td>
-                <td class="col-type"></td>
-                <td *ngFor="let v of c.months" class="col-month num">{{ fmt(v) }}</td>
-                <td class="col-total num">{{ fmt(c.total) }}</td>
-                <td class="col-mail" (click)="$event.stopPropagation()">
-                  <button class="mail-btn mail-normal" title="Normal Mail" (click)="sendMail('normal', g.mallName || g.mallCode, c)">📧</button>
-                  <button class="mail-btn mail-ihtar" title="İhtar Mail" (click)="sendMail('ihtar', g.mallName || g.mallCode, c)">⚠️</button>
-                  <button class="mail-btn mail-icra" title="İcra Mail" (click)="sendMail('icra', g.mallName || g.mallCode, c)">⚖️</button>
-                </td>
-              </tr>
-              <ng-container *ngIf="c.expanded">
-                <tr *ngFor="let r of c.contracts" class="contract-row">
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let g of filteredMallGroups">
+            <tr class="mall-row" (click)="toggleMall(g)">
+              <td class="col-name">
+                <span class="toggle">{{ g.expanded ? '▼' : '▶' }}</span>
+                <strong>{{ g.mallName || g.mallCode }}</strong>
+              </td>
+              <td class="col-brand"></td>
+              <td class="col-lot"></td>
+              <td class="col-type"></td>
+              <td *ngFor="let v of g.months" class="col-month num">{{ fmt(v) }}</td>
+              <td class="col-total num">{{ fmt(g.total) }}</td>
+              <td class="col-mail"></td>
+            </tr>
+            <ng-container *ngIf="g.expanded">
+              <ng-container *ngFor="let c of g.customers">
+                <tr class="customer-row" (click)="toggleCustomer(c)">
                   <td class="col-name">
-                    <span class="indent2"></span>
-                    {{ r.contractNo }}
+                    <span class="indent"></span>
+                    <span class="toggle">{{ c.expanded ? '▼' : '▶' }}</span>
+                    <span class="cust-no">{{ c.customerNo }}</span>
+                    <span class="cust-name">{{ c.customerName }}</span>
                   </td>
-                  <td class="col-brand">
-                    <span class="brand-name" *ngIf="r.brandName">{{ r.brandName }}</span>
+                  <td class="col-brand"></td>
+                  <td class="col-lot"></td>
+                  <td class="col-type"></td>
+                  <td *ngFor="let v of c.months" class="col-month num">{{ fmt(v) }}</td>
+                  <td class="col-total num">{{ fmt(c.total) }}</td>
+                  <td class="col-mail" (click)="$event.stopPropagation()">
+                    <button class="mail-btn" title="Normal Mail" (click)="sendMail('normal', g.mallName || g.mallCode, c)">📧</button>
+                    <button class="mail-btn" title="İhtar Mail" (click)="sendMail('ihtar', g.mallName || g.mallCode, c)">⚠️</button>
+                    <button class="mail-btn" title="İcra Mail" (click)="sendMail('icra', g.mallName || g.mallCode, c)">⚖️</button>
                   </td>
-                  <td class="col-lot">
-                    <span class="lot-info" *ngIf="r.lotNo">{{ r.lotNo }}</span>
-                    <span class="lot-type" *ngIf="r.lotLocationCode"> · {{ r.lotLocationCode }}</span>
-                  </td>
-                  <td class="col-type">
-                    <span class="invoice-badge">{{ r.invoiceType }}</span>
-                  </td>
-                  <td *ngFor="let v of r.months" class="col-month num">{{ fmt(v) }}</td>
-                  <td class="col-total num">{{ fmt(r.total) }}</td>
-                  <td class="col-mail"></td>
                 </tr>
+                <ng-container *ngIf="c.expanded">
+                  <tr *ngFor="let r of c.contracts" class="contract-row">
+                    <td class="col-name"><span class="indent2"></span>{{ r.contractNo }}</td>
+                    <td class="col-brand"><span class="brand-name" *ngIf="r.brandName">{{ r.brandName }}</span></td>
+                    <td class="col-lot">
+                      <span class="lot-info" *ngIf="r.lotNo">{{ r.lotNo }}</span>
+                      <span class="lot-type" *ngIf="r.lotLocationCode"> · {{ r.lotLocationCode }}</span>
+                    </td>
+                    <td class="col-type"><span class="invoice-badge">{{ r.invoiceType }}</span></td>
+                    <td *ngFor="let v of r.months" class="col-month num">{{ fmt(v) }}</td>
+                    <td class="col-total num">{{ fmt(r.total) }}</td>
+                    <td class="col-mail"></td>
+                  </tr>
+                </ng-container>
               </ng-container>
             </ng-container>
           </ng-container>
-        </ng-container>
-        <tr class="total-row">
-          <td class="col-name"><strong>GENEL TOPLAM</strong></td>
-          <td class="col-brand"></td>
-          <td class="col-lot"></td>
-          <td class="col-type"></td>
-          <td *ngFor="let v of grandMonths" class="col-month num">{{ fmt(v) }}</td>
-          <td class="col-total num">{{ fmt(grandTotal) }}</td>
-          <td class="col-mail"></td>
-        </tr>
-      </tbody>
-    </table>
+          <tr class="total-row">
+            <td class="col-name"><strong>GENEL TOPLAM</strong></td>
+            <td class="col-brand"></td>
+            <td class="col-lot"></td>
+            <td class="col-type"></td>
+            <td *ngFor="let v of grandMonths" class="col-month num">{{ fmt(v) }}</td>
+            <td class="col-total num">{{ fmt(grandTotal) }}</td>
+            <td class="col-mail"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
+
+  <!-- EŞLEŞMEMİŞ ÖDEMELER TABLOSU -->
+  <div class="table-section neg-section" *ngIf="!loading && filteredMallGroupsNeg.length > 0">
+    <div class="table-section-title neg-title">
+      <span class="section-dot dot-orange"></span>
+      Eşleşmemiş Ödemeler / Alacaklar
+      <span class="section-total neg-total">{{ fmt(grandTotalNeg) }} ₺</span>
+      <span class="neg-info">Bu tutarlar henüz faturaya eşleşmemiş ödemelerdir</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-name">AVM / Müşteri / Kontrat</th>
+            <th class="col-brand">Marka</th>
+            <th class="col-lot">Lot / Mahal</th>
+            <th class="col-type">Fatura Türü</th>
+            <th *ngFor="let m of months" class="col-month">{{ m }}</th>
+            <th class="col-total">TOPLAM</th>
+            <th class="col-mail"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let g of filteredMallGroupsNeg">
+            <tr class="mall-row mall-row-neg" (click)="toggleMall(g)">
+              <td class="col-name">
+                <span class="toggle">{{ g.expanded ? '▼' : '▶' }}</span>
+                <strong>{{ g.mallName || g.mallCode }}</strong>
+              </td>
+              <td class="col-brand"></td>
+              <td class="col-lot"></td>
+              <td class="col-type"></td>
+              <td *ngFor="let v of g.months" class="col-month num neg-num">{{ fmt(v) }}</td>
+              <td class="col-total num neg-num">{{ fmt(g.total) }}</td>
+              <td class="col-mail"></td>
+            </tr>
+            <ng-container *ngIf="g.expanded">
+              <ng-container *ngFor="let c of g.customers">
+                <tr class="customer-row" (click)="toggleCustomer(c)">
+                  <td class="col-name">
+                    <span class="indent"></span>
+                    <span class="toggle">{{ c.expanded ? '▼' : '▶' }}</span>
+                    <span class="cust-no">{{ c.customerNo }}</span>
+                    <span class="cust-name">{{ c.customerName }}</span>
+                  </td>
+                  <td class="col-brand"></td>
+                  <td class="col-lot"></td>
+                  <td class="col-type"></td>
+                  <td *ngFor="let v of c.months" class="col-month num neg-num">{{ fmt(v) }}</td>
+                  <td class="col-total num neg-num">{{ fmt(c.total) }}</td>
+                  <td class="col-mail"></td>
+                </tr>
+                <ng-container *ngIf="c.expanded">
+                  <tr *ngFor="let r of c.contracts" class="contract-row">
+                    <td class="col-name"><span class="indent2"></span>{{ r.contractNo }}</td>
+                    <td class="col-brand"><span class="brand-name" *ngIf="r.brandName">{{ r.brandName }}</span></td>
+                    <td class="col-lot">
+                      <span class="lot-info" *ngIf="r.lotNo">{{ r.lotNo }}</span>
+                      <span class="lot-type" *ngIf="r.lotLocationCode"> · {{ r.lotLocationCode }}</span>
+                    </td>
+                    <td class="col-type"><span class="invoice-badge">{{ r.invoiceType }}</span></td>
+                    <td *ngFor="let v of r.months" class="col-month num neg-num">{{ fmt(v) }}</td>
+                    <td class="col-total num neg-num">{{ fmt(r.total) }}</td>
+                    <td class="col-mail"></td>
+                  </tr>
+                </ng-container>
+              </ng-container>
+            </ng-container>
+          </ng-container>
+          <tr class="total-row total-row-neg">
+            <td class="col-name"><strong>GENEL TOPLAM</strong></td>
+            <td class="col-brand"></td>
+            <td class="col-lot"></td>
+            <td class="col-type"></td>
+            <td *ngFor="let v of grandMonthsNeg" class="col-month num neg-num">{{ fmt(v) }}</td>
+            <td class="col-total num neg-num">{{ fmt(grandTotalNeg) }}</td>
+            <td class="col-mail"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>

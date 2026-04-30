@@ -31,7 +31,14 @@ export class OdataService {
   getAging(year: number) {
     const url = environment.odata.url
       .replace('ContractTurnoverEntry', 'CustomerLedgerEntries')
-      + `?$filter=Open eq true and Posting_Date ge ${year}-01-01 and Posting_Date le ${year}-12-31&$top=10000`;
+      + `?$filter=Remaining_Amt_LCY gt 0 and Posting_Date ge ${year}-01-01 and Posting_Date le ${year}-12-31&$top=10000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
+
+  getAgingNegative(year: number) {
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'CustomerLedgerEntries')
+      + `?$filter=Remaining_Amt_LCY lt 0 and Posting_Date ge ${year}-01-01 and Posting_Date le ${year}-12-31&$top=10000`;
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 
