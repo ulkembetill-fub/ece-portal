@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OdataService } from '../../core/odata';
 import * as XLSX from 'xlsx';
+import { forkJoin } from 'rxjs';
 
 const MONTHS = ['OCA','SUB','MAR','NIS','MAY','HAZ','TEM','AGU','EYL','EKI','KAS','ARA'];
 const MONTHS_DISPLAY = ['OCA','ŞUB','MAR','NİS','MAY','HAZ','TEM','AĞU','EYL','EKİ','KAS','ARA'];
@@ -46,7 +47,6 @@ export class Aging implements OnInit {
   loading = false;
   error = '';
   allData: any[] = [];
-  allDataNeg: any[] = [];
   mallGroups: MallGroup[] = [];
   filteredMallGroups: MallGroup[] = [];
   mallGroupsNeg: MallGroup[] = [];
@@ -65,7 +65,6 @@ export class Aging implements OnInit {
   grandTotal = 0;
   grandMonthsNeg: number[] = Array(12).fill(0);
   grandTotalNeg = 0;
-  showNegative = false;
 
   constructor(private odata: OdataService) {}
 
@@ -93,22 +92,22 @@ export class Aging implements OnInit {
     this.grandTotal = 0;
     this.grandTotalNeg = 0;
 
-    this.odata.getAging(this.selectedYear).subscribe({
+    forkJoin({
+      pos: this.odata.getAging(this.selectedYear),
+      neg: this.odata.getAgingNegative(this.selectedYear)
+    }).subscribe({
       next: (res: any) => {
-        this.allData = res.value || [];
+        const posData = res.pos.value || [];
+        const negData = res.neg.value || [];
+
+        // Tüm veriyi birleştir
+        this.allData = [...posData, ...negData];
+
         this.malls = ['Tümü', ...new Set<string>(this.allData.map((d: any) => d.Mall_Code).filter(Boolean))].sort();
         this.invoiceTypes = ['Tümü', ...new Set<string>(this.allData.map((d: any) => d.Invoice_Type).filter(Boolean))].sort();
-        this.buildTable();
 
-        // Negatif verileri de çek
-        this.odata.getAgingNegative(this.selectedYear).subscribe({
-          next: (res2: any) => {
-            this.allDataNeg = res2.value || [];
-            this.buildTableNeg();
-            this.loading = false;
-          },
-          error: () => { this.loading = false; }
-        });
+        this.buildTables();
+        this.loading = false;
       },
       error: (err: any) => {
         this.error = 'Veri yüklenemedi: ' + err.message;
@@ -117,27 +116,33 @@ export class Aging implements OnInit {
     });
   }
 
-  buildTable() {
+  buildTables() {
     let data = this.allData;
     if (this.selectedMall !== 'Tümü') data = data.filter((d: any) => d.Mall_Code === this.selectedMall);
     if (this.selectedInvoiceType !== 'Tümü') data = data.filter((d: any) => d.Invoice_Type === this.selectedInvoiceType);
 
-    this.mallGroups = [];
-    this.grandMonths = Array(12).fill(0);
-    this.grandTotal = 0;
+    // Müşteri bazında net bakiye hesapla
+    const customerNetMap = new Map<string, number>();
+    for (const d of data) {
+      const custNo = d.Customer_No || 'Bilinmiyor';
+      customerNetMap.set(custNo, (customerNetMap.get(custNo) || 0) + (d.Remaining_Amt_LCY || 0));
+    }
 
+    // Tüm kontrat verilerini grupla
     const mallMap = new Map<string, Map<string, Map<string, ContractRow>>>();
     const customerNames = new Map<string, string>();
+    const customerMalls = new Map<string, string>();
 
     for (const d of data) {
-      const mall = d.Mall_Code || 'Bilinmiyor';
       const custNo = d.Customer_No || 'Bilinmiyor';
+      const mall = d.Mall_Code || 'Bilinmiyor';
       const custName = d.Customer_Name || custNo;
       const contractKey = (d.Contract_No || '-') + '|' + (d.Invoice_Type || '');
       const month = new Date(d.Posting_Date).getMonth();
       const amount = d.Remaining_Amt_LCY || 0;
 
       customerNames.set(custNo, custName);
+      customerMalls.set(custNo, mall);
 
       if (!mallMap.has(mall)) mallMap.set(mall, new Map());
       const custMap = mallMap.get(mall)!;
@@ -158,27 +163,56 @@ export class Aging implements OnInit {
       row.total += amount;
     }
 
-    for (const [mall, custMap] of mallMap) {
-      const customers: CustomerRow[] = [];
-      const mallMonths = Array(12).fill(0);
+    // Pozitif ve negatif grupları ayır
+    this.mallGroups = [];
+    this.mallGroupsNeg = [];
+    this.grandMonths = Array(12).fill(0);
+    this.grandMonthsNeg = Array(12).fill(0);
+    this.grandTotal = 0;
+    this.grandTotalNeg = 0;
 
+    const posMap = new Map<string, CustomerRow[]>();
+    const negMap = new Map<string, CustomerRow[]>();
+    const posMallMonths = new Map<string, number[]>();
+    const negMallMonths = new Map<string, number[]>();
+
+    for (const [mall, custMap] of mallMap) {
       for (const [custNo, contractMap] of custMap) {
+        const netTotal = customerNetMap.get(custNo) || 0;
+        if (netTotal === 0) continue;
+
         const contracts = Array.from(contractMap.values());
         const custMonths = Array(12).fill(0);
         contracts.forEach(c => c.months.forEach((v, i) => custMonths[i] += v));
-        customers.push({
+
+        const custRow: CustomerRow = {
           customerNo: custNo,
           customerName: customerNames.get(custNo) || custNo,
           expanded: false,
           contracts,
           months: custMonths,
-          total: custMonths.reduce((a, b) => a + b, 0)
-        });
-        custMonths.forEach((v, i) => mallMonths[i] += v);
-      }
+          total: netTotal
+        };
 
+        if (netTotal > 0) {
+          if (!posMap.has(mall)) posMap.set(mall, []);
+          posMap.get(mall)!.push(custRow);
+          if (!posMallMonths.has(mall)) posMallMonths.set(mall, Array(12).fill(0));
+          custMonths.forEach((v, i) => posMallMonths.get(mall)![i] += v);
+        } else {
+          if (!negMap.has(mall)) negMap.set(mall, []);
+          negMap.get(mall)!.push(custRow);
+          if (!negMallMonths.has(mall)) negMallMonths.set(mall, Array(12).fill(0));
+          custMonths.forEach((v, i) => negMallMonths.get(mall)![i] += v);
+        }
+      }
+    }
+
+    // Pozitif MallGroups
+    for (const [mall, customers] of posMap) {
       customers.sort((a, b) => b.total - a.total);
-      const mallTotal = mallMonths.reduce((a, b) => a + b, 0);
+      const mallMonths = posMallMonths.get(mall) || Array(12).fill(0);
+      const mallTotal = customers.reduce((s, c) => s + c.total, 0);
       this.mallGroups.push({
         mallCode: mall,
         mallName: this.mallNames.get(mall) || mall,
@@ -191,72 +225,11 @@ export class Aging implements OnInit {
       this.grandTotal += mallTotal;
     }
 
-    this.mallGroups.sort((a, b) => a.mallCode.localeCompare(b.mallCode));
-    this.applySearch();
-  }
-
-  buildTableNeg() {
-    let data = this.allDataNeg;
-    if (this.selectedMall !== 'Tümü') data = data.filter((d: any) => d.Mall_Code === this.selectedMall);
-    if (this.selectedInvoiceType !== 'Tümü') data = data.filter((d: any) => d.Invoice_Type === this.selectedInvoiceType);
-
-    this.mallGroupsNeg = [];
-    this.grandMonthsNeg = Array(12).fill(0);
-    this.grandTotalNeg = 0;
-
-    const mallMap = new Map<string, Map<string, Map<string, ContractRow>>>();
-    const customerNames = new Map<string, string>();
-
-    for (const d of data) {
-      const mall = d.Mall_Code || 'Bilinmiyor';
-      const custNo = d.Customer_No || 'Bilinmiyor';
-      const custName = d.Customer_Name || custNo;
-      const contractKey = (d.Contract_No || '-') + '|' + (d.Invoice_Type || '');
-      const month = new Date(d.Posting_Date).getMonth();
-      const amount = d.Remaining_Amt_LCY || 0;
-
-      customerNames.set(custNo, custName);
-
-      if (!mallMap.has(mall)) mallMap.set(mall, new Map());
-      const custMap = mallMap.get(mall)!;
-      if (!custMap.has(custNo)) custMap.set(custNo, new Map());
-      const contractMap = custMap.get(custNo)!;
-      if (!contractMap.has(contractKey)) contractMap.set(contractKey, {
-        contractNo: d.Contract_No || '-',
-        brandName: d.Brand_Name || '',
-        lotNo: d.Lot_No || '',
-        lotLocationCode: d.Lot_Location_Code || '',
-        invoiceType: d.Invoice_Type || '',
-        months: Array(12).fill(0),
-        total: 0
-      });
-
-      const row = contractMap.get(contractKey)!;
-      row.months[month] += amount;
-      row.total += amount;
-    }
-
-    for (const [mall, custMap] of mallMap) {
-      const customers: CustomerRow[] = [];
-      const mallMonths = Array(12).fill(0);
-
-      for (const [custNo, contractMap] of custMap) {
-        const contracts = Array.from(contractMap.values());
-        const custMonths = Array(12).fill(0);
-        contracts.forEach(c => c.months.forEach((v, i) => custMonths[i] += v));
-        customers.push({
-          customerNo: custNo,
-          customerName: customerNames.get(custNo) || custNo,
-          expanded: false,
-          contracts,
-          months: custMonths,
-          total: custMonths.reduce((a, b) => a + b, 0)
-        });
-        custMonths.forEach((v, i) => mallMonths[i] += v);
-      }
-
+    // Negatif MallGroups
+    for (const [mall, customers] of negMap) {
       customers.sort((a, b) => a.total - b.total);
-      const mallTotal = mallMonths.reduce((a, b) => a + b, 0);
+      const mallMonths = negMallMonths.get(mall) || Array(12).fill(0);
+      const mallTotal = customers.reduce((s, c) => s + c.total, 0);
       this.mallGroupsNeg.push({
         mallCode: mall,
         mallName: this.mallNames.get(mall) || mall,
@@ -269,6 +242,7 @@ export class Aging implements OnInit {
       this.grandTotalNeg += mallTotal;
     }
 
+    this.mallGroups.sort((a, b) => a.mallCode.localeCompare(b.mallCode));
     this.mallGroupsNeg.sort((a, b) => a.mallCode.localeCompare(b.mallCode));
     this.applySearch();
   }
