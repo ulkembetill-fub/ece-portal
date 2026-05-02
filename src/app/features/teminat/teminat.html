@@ -1,0 +1,177 @@
+<div class="teminat-wrap">
+  <div class="teminat-header">
+    <div class="header-left">
+      <h2>Teminat Mektupları</h2>
+      <span class="record-count" *ngIf="!loading && filtered.length > 0">{{ filtered.length }} kayıt</span>
+    </div>
+    <div class="header-right">
+      <select [(ngModel)]="selectedMall" (change)="applyFilter()">
+        <option *ngFor="let m of malls" [value]="m">{{ m }}</option>
+      </select>
+      <select [(ngModel)]="selectedDocType" (change)="applyFilter()">
+        <option *ngFor="let t of docTypes" [value]="t">{{ t }}</option>
+      </select>
+      <select [(ngModel)]="selectedStatus" (change)="applyFilter()">
+        <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+      </select>
+      <select [(ngModel)]="selectedRentStatus" (change)="applyFilter()">
+        <option *ngFor="let s of rentStatusOptions" [value]="s">{{ s }}</option>
+      </select>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="text" placeholder="Müşteri, marka, kontrat ara..."
+          [(ngModel)]="searchText" (ngModelChange)="applyFilter()" />
+        <button class="search-clear" *ngIf="searchText" (click)="searchText=''; applyFilter()">✕</button>
+      </div>
+      <button class="btn-load" (click)="loadData()" [disabled]="loading">
+        {{ loading ? 'Yükleniyor...' : '⟳ Veriyi Getir' }}
+      </button>
+      <button class="btn-excel" (click)="exportExcel()" *ngIf="filtered.length > 0">⬇ Excel</button>
+    </div>
+  </div>
+
+  <div class="stat-grid" *ngIf="!loading && allData.length > 0">
+    <div class="stat-card stat-blue">
+      <div class="stat-icon">🔒</div>
+      <div class="stat-info">
+        <div class="stat-label">Toplam Teminat</div>
+        <div class="stat-value">{{ fmt(totalAmount) }} ₺</div>
+        <div class="stat-sub">{{ allData.length }} firma</div>
+      </div>
+    </div>
+    <div class="stat-card stat-red">
+      <div class="stat-icon">🚨</div>
+      <div class="stat-info">
+        <div class="stat-label">Vadesi Geçmiş</div>
+        <div class="stat-value">{{ expiredCount }}</div>
+        <div class="stat-sub">Acil işlem gerekli</div>
+      </div>
+    </div>
+    <div class="stat-card stat-orange">
+      <div class="stat-icon">⚠️</div>
+      <div class="stat-info">
+        <div class="stat-label">30 Gün İçinde</div>
+        <div class="stat-value">{{ criticalCount }}</div>
+        <div class="stat-sub">Kritik takip</div>
+      </div>
+    </div>
+    <div class="stat-card stat-red2">
+      <div class="stat-icon">📉</div>
+      <div class="stat-info">
+        <div class="stat-label">Teminat Yetersiz</div>
+        <div class="stat-value">{{ insufficientCount }}</div>
+        <div class="stat-sub">2 aydan az teminat</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && allData.length === 0 && !error">
+    <p>Veriyi görmek için "Veriyi Getir" butonuna tıklayın.</p>
+  </div>
+
+  <div class="error" *ngIf="error">{{ error }}</div>
+
+  <div class="table-wrap" *ngIf="!loading && filtered.length > 0">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-status">Vade Durumu</th>
+          <th class="col-name">Müşteri / Marka</th>
+          <th class="col-mall">AVM</th>
+          <th class="col-lot">Lot</th>
+          <th class="col-bank">Banka</th>
+          <th class="col-type">Belge</th>
+          <th class="col-amount">Teminat Tutarı</th>
+          <th class="col-date">Son Tarih</th>
+          <th class="col-days">Kalan Gün</th>
+          <th class="col-rent">Aylık Kira</th>
+          <th class="col-months">Kaç Aylık</th>
+          <th class="col-rent-status">Kira Durumu</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let r of filtered">
+          <tr [class]="'row-' + r.status">
+            <td class="col-status">
+              <span [class]="'status-badge badge-' + r.status">{{ getStatusLabel(r.status) }}</span>
+            </td>
+            <td class="col-name">
+              <div class="cust-name">{{ r.customerName }}</div>
+              <div class="brand-name" *ngIf="r.brandName">{{ r.brandName }}</div>
+              <div class="contract-no">{{ r.contractNo }}</div>
+              <button class="sibling-btn" *ngIf="r.siblingCount > 0" (click)="toggleSiblings(r)">
+                {{ r.expanded ? '▼' : '▶' }} {{ r.siblingCount }} mektup daha
+              </button>
+            </td>
+            <td class="col-mall">{{ r.mallCode }}</td>
+            <td class="col-lot">
+              <span class="lot-no">{{ r.lotNo }}</span>
+              <span class="lot-type" *ngIf="r.lotLocationCode"> · {{ r.lotLocationCode }}</span>
+            </td>
+            <td class="col-bank">{{ r.bankName }}</td>
+            <td class="col-type">{{ r.documentType }}</td>
+            <td class="col-amount num">{{ fmt(r.amount) }}</td>
+            <td class="col-date">{{ fmtDate(r.dueDate) }}</td>
+            <td class="col-days">
+              <span *ngIf="r.status !== 'returned'" [class]="'days-' + r.status">
+                {{ r.daysLeft < 0 ? (r.daysLeft * -1) + ' gün geçti' : r.daysLeft + ' gün' }}
+              </span>
+            </td>
+            <td class="col-rent num">
+              <span *ngIf="r.monthlyRent > 0">{{ fmt(r.monthlyRent) }}</span>
+              <span *ngIf="r.monthlyRent === 0 && r.kiraCurrency" class="currency-badge">{{ r.kiraCurrency }}</span>
+              <span *ngIf="r.monthlyRent === 0 && !r.kiraCurrency" class="text-dim">—</span>
+            </td>
+            <td class="col-months num">
+              <span *ngIf="r.monthlyRent > 0" [class]="'months-' + r.rentStatus">
+                {{ r.monthsCovered.toFixed(1) }} ay
+              </span>
+              <span *ngIf="r.monthlyRent === 0" class="text-dim">—</span>
+            </td>
+            <td class="col-rent-status">
+              <span *ngIf="r.rentStatus === 'sufficient'" class="rent-badge rent-sufficient">✅ Yeterli</span>
+              <span *ngIf="r.rentStatus === 'insufficient'" class="rent-badge rent-insufficient">🔴 Yetersiz</span>
+              <span *ngIf="r.rentStatus === 'unknown' && r.kiraCurrency" class="currency-badge">{{ r.kiraCurrency }}</span>
+              <span *ngIf="r.rentStatus === 'unknown' && !r.kiraCurrency" class="text-dim">—</span>
+            </td>
+          </tr>
+
+          <ng-container *ngIf="r.expanded">
+            <tr *ngFor="let s of r.siblings" [class]="'row-child row-child-' + s.status">
+              <td class="col-status">
+                <span [class]="'status-badge badge-' + s.status">{{ getStatusLabel(s.status) }}</span>
+              </td>
+              <td class="col-name">
+                <div class="child-indent">
+                  <span class="child-icon">↳</span>
+                  <div>
+                    <div class="brand-name" *ngIf="s.brandName">{{ s.brandName }}</div>
+                    <div class="contract-no">{{ s.contractNo }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="col-mall">{{ s.mallCode }}</td>
+              <td class="col-lot">
+                <span class="lot-no">{{ s.lotNo }}</span>
+                <span class="lot-type" *ngIf="s.lotLocationCode"> · {{ s.lotLocationCode }}</span>
+              </td>
+              <td class="col-bank">{{ s.bankName }}</td>
+              <td class="col-type">{{ s.documentType }}</td>
+              <td class="col-amount num">{{ fmt(s.amount) }}</td>
+              <td class="col-date">{{ fmtDate(s.dueDate) }}</td>
+              <td class="col-days">
+                <span *ngIf="s.status !== 'returned'" [class]="'days-' + s.status">
+                  {{ s.daysLeft < 0 ? (s.daysLeft * -1) + ' gün geçti' : s.daysLeft + ' gün' }}
+                </span>
+              </td>
+              <td class="col-rent num">{{ fmt(s.amount) }}</td>
+              <td class="col-months num"><span class="text-dim">—</span></td>
+              <td class="col-rent-status"><span class="text-dim">—</span></td>
+            </tr>
+          </ng-container>
+
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>

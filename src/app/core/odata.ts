@@ -48,4 +48,19 @@ export class OdataService {
       + `?$select=Code,Name&$top=100`;
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
+
+  getTeminat() {
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'Guarantees_Letter')
+      + `?$filter=Amount gt 0&$top=5000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
+
+  getKiraBilgileri() {
+    const today = new Date().toISOString().split('T')[0];
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'KiralamaBilgileri')
+      + `?$filter=Monthly_Rental_Amount gt 0 and Contract_Starting_Date le ${today} and Contract_Ending_Date ge ${today}&$top=5000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
 }
