@@ -1,0 +1,168 @@
+<div class="portal-wrap">
+  <div class="portal-header">
+    <div class="header-left">
+      <h2>Portal Kullanım Analizi</h2>
+      <span class="record-count" *ngIf="!loading && totalBrands > 0">{{ selectedYear }} yılı</span>
+    </div>
+    <div class="header-right">
+      <select [(ngModel)]="selectedYear" class="year-select">
+        <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+      </select>
+      <select [(ngModel)]="selectedMall" (change)="buildStats()">
+        <option *ngFor="let m of malls" [value]="m">{{ m }}</option>
+      </select>
+      <button class="btn-load" (click)="loadData()" [disabled]="loading">
+        {{ loading ? 'Yükleniyor...' : '⟳ Veriyi Getir' }}
+      </button>
+      <button class="btn-excel" (click)="exportExcel()" *ngIf="totalBrands > 0">⬇ Excel</button>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && totalBrands === 0 && !error">
+    <p>Yıl seçip "Veriyi Getir" butonuna tıklayın.</p>
+  </div>
+
+  <div class="error" *ngIf="error">{{ error }}</div>
+
+  <ng-container *ngIf="!loading && totalBrands > 0">
+
+    <div class="stat-grid">
+      <div class="stat-card stat-blue">
+        <div class="stat-icon">🏪</div>
+        <div class="stat-info">
+          <div class="stat-label">Toplam Marka</div>
+          <div class="stat-value">{{ totalBrands }}</div>
+          <div class="stat-sub">{{ totalEntries }} kayıt</div>
+        </div>
+      </div>
+      <div class="stat-card stat-green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+          <div class="stat-label">Portaldan Giriyor</div>
+          <div class="stat-value">{{ portalBrands }}</div>
+          <div class="stat-sub">{{ portalPct }}% kullanım oranı</div>
+        </div>
+      </div>
+      <div class="stat-card stat-red">
+        <div class="stat-icon">❌</div>
+        <div class="stat-info">
+          <div class="stat-label">Portal Kullanmıyor</div>
+          <div class="stat-value">{{ noPortalBrands }}</div>
+          <div class="stat-sub">{{ 100 - portalPct }}% geleneksel</div>
+        </div>
+      </div>
+      <div class="stat-card stat-yellow">
+        <div class="stat-icon">📝</div>
+        <div class="stat-info">
+          <div class="stat-label">Portal ile Giriş</div>
+          <div class="stat-value">{{ portalEntries }}</div>
+          <div class="stat-sub">{{ totalEntries - portalEntries }} geleneksel</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-card">
+      <div class="progress-title">Genel Portal Kullanım Oranı (marka bazında)</div>
+      <div class="progress-bg">
+        <div class="progress-fill" [style.width.%]="portalPct">
+          <span *ngIf="portalPct > 5">%{{ portalPct }}</span>
+        </div>
+      </div>
+      <div class="progress-legend">
+        <span class="leg"><span class="leg-dot dot-blue"></span> Portal ({{ portalBrands }})</span>
+        <span class="leg"><span class="leg-dot dot-gray"></span> Geleneksel ({{ noPortalBrands }})</span>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+
+      <div class="chart-card">
+        <div class="chart-title">Aylara Göre Portal Kullanımı</div>
+        <div class="month-bars">
+          <div class="month-row" *ngFor="let m of monthStats">
+            <div class="month-label">{{ m.month }}</div>
+            <div class="month-bar-bg">
+              <div class="month-bar-total" [style.width.%]="getBarWidth(m.total, maxMonthTotal())"></div>
+              <div class="month-bar-portal" [style.width.%]="getBarWidth(m.portal, maxMonthTotal())"></div>
+            </div>
+            <div class="month-val">
+              <span class="portal-count">{{ m.portal }}</span>
+              <span class="total-count">/ {{ m.total }}</span>
+            </div>
+            <div class="month-pct"
+              [class.pct-good]="m.pct >= 50"
+              [class.pct-bad]="m.pct < 50 && m.total > 0">
+              {{ m.total > 0 ? '%' + m.pct : '—' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Marka Portal Durumu</div>
+        <div class="tab-row">
+          <button [class]="'tab-btn' + (activeTab === 'noportal' ? ' active' : '')" (click)="setTab('noportal')">
+            ❌ Kullanmıyor ({{ noPortalBrands }})
+          </button>
+          <button [class]="'tab-btn' + (activeTab === 'portal' ? ' active' : '')" (click)="setTab('portal')">
+            ✅ Portaldan Giriyor ({{ portalBrands }})
+          </button>
+        </div>
+        <input class="search-input" type="text" placeholder="Marka ara..."
+          [(ngModel)]="searchText" (ngModelChange)="applyTabFilter()" />
+        <div class="brand-list">
+          <div class="brand-item" *ngFor="let b of filteredBrands">
+            <div class="brand-info">
+              <span class="brand-name">{{ b.brandName }}</span>
+              <span class="brand-mall">{{ b.mallCode }}</span>
+            </div>
+            <div class="brand-actions">
+              <span class="entry-count">{{ b.totalEntries }} giriş</span>
+              <button class="mail-btn" (click)="openMailModal(b)" *ngIf="!b.usesPortal">
+                📧 Mail
+              </button>
+            </div>
+          </div>
+          <div class="empty-list" *ngIf="filteredBrands.length === 0">
+            Sonuç bulunamadı
+          </div>
+        </div>
+        <div class="list-footer" *ngIf="activeTab === 'noportal' && noPortalBrands > 0">
+          <button class="btn-mail-all" (click)="mailAllNoPortal()">
+            📧 Tümüne Mail Gönder ({{ noPortalBrands }})
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </ng-container>
+
+  <div class="modal-overlay" [class.open]="showMailModal" (click)="closeMailModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Mail Gönder — {{ selectedBrand?.brandName }}</h3>
+        <button class="modal-close" (click)="closeMailModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Alıcı E-posta</label>
+          <input class="form-input" type="email" [(ngModel)]="mailTo" placeholder="ornek@firma.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Konu</label>
+          <input class="form-input" type="text" [(ngModel)]="mailSubject" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">İçerik</label>
+          <textarea class="form-input" [(ngModel)]="mailBody" rows="8"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeMailModal()">İptal</button>
+        <button class="btn-send" (click)="sendMail()">📧 Outlook'ta Aç</button>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -63,4 +63,9 @@ export class OdataService {
       + `?$filter=Monthly_Rental_Amount gt 0 and Contract_Starting_Date le ${today} and Contract_Ending_Date ge ${today}&$top=5000`;
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
+
+  getPortalKullanim(year: number) {
+    const url = `${environment.odata.url}?$filter=Year eq ${year}&$select=Mall_Code,Brand_Name,Brand_Code,Customer_No,Month,Amount,Created_From_Web_Portal,Approved&$top=10000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
 }
