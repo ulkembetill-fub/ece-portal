@@ -28,6 +28,13 @@ export class OdataService {
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 
+  getContractList() {
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'ContractList')
+      + `?$select=No,Mall_Code,Brand_Code,Lot_No,Tenant_Name&$filter=Status eq 'Y%C3%BCr%C3%BCrl%C3%BCkte'&$top=5000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
+
   getAging(year: number) {
     const url = environment.odata.url
       .replace('ContractTurnoverEntry', 'CustomerLedgerEntries')

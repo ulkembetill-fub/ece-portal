@@ -176,6 +176,31 @@
 .dot-blue { background: var(--accent3); }
 .dot-gray { background: var(--border); }
 
+/* ANA TAB */
+.main-tab-row {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.main-tab {
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+
+.main-tab.active {
+  background: var(--accent3);
+  color: #fff;
+  border-color: var(--accent3);
+}
+
 /* CHARTS */
 .charts-grid {
   display: grid;
@@ -275,7 +300,6 @@
 .pct-good { color: var(--green) !important; }
 .pct-bad { color: #ef4444 !important; }
 
-/* TAB */
 .tab-row {
   display: flex;
   gap: 6px;
@@ -339,17 +363,38 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.brand-name-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .brand-name {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text);
+}
+
+.brand-tenant {
+  font-size: 10px;
+  color: var(--text-muted);
 }
 
 .brand-mall {
   font-size: 10px;
   color: var(--text-muted);
+  background: var(--bg-input);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.brand-contract {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: monospace;
   background: var(--bg-input);
   padding: 1px 6px;
   border-radius: 4px;
@@ -415,6 +460,70 @@
   color: #fff;
   border-color: var(--accent3);
 }
+
+/* DETAY TABLO */
+.detail-table-wrap {
+  overflow-x: auto;
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.detail-table thead th {
+  background: var(--bg3);
+  padding: 9px 10px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.detail-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+
+.detail-table tbody tr:hover { background: var(--bg3); }
+.row-portal { border-left: 2px solid var(--green); }
+.row-noportal { border-left: 2px solid #ef444433; }
+
+.td-num { color: var(--text-muted); padding: 8px 10px; min-width: 32px; }
+.td-brand { padding: 8px 10px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.td-tenant { padding: 8px 6px; font-size: 11px; color: var(--text-muted); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.td-mall { padding: 8px 6px; }
+.td-contract { padding: 8px 6px; font-family: monospace; font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.td-lot { padding: 8px 6px; font-family: monospace; font-size: 11px; color: var(--accent); white-space: nowrap; }
+.td-month { padding: 6px 4px; text-align: center; }
+.td-portal { padding: 8px 6px; }
+.td-total { padding: 8px 10px; text-align: right; font-family: monospace; color: var(--text-muted); }
+
+.month-icon { font-size: 13px; cursor: default; }
+.mi-empty { opacity: 0.2; }
+
+.portal-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.pb-yes { background: #064e3b; color: var(--green); }
+.pb-no { background: #450a0a; color: #f87171; }
 
 /* MODAL */
 .modal-overlay {

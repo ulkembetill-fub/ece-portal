@@ -74,70 +74,127 @@
       </div>
     </div>
 
-    <div class="charts-grid">
-
-      <div class="chart-card">
-        <div class="chart-title">Aylara Göre Portal Kullanımı</div>
-        <div class="month-bars">
-          <div class="month-row" *ngFor="let m of monthStats">
-            <div class="month-label">{{ m.month }}</div>
-            <div class="month-bar-bg">
-              <div class="month-bar-total" [style.width.%]="getBarWidth(m.total, maxMonthTotal())"></div>
-              <div class="month-bar-portal" [style.width.%]="getBarWidth(m.portal, maxMonthTotal())"></div>
-            </div>
-            <div class="month-val">
-              <span class="portal-count">{{ m.portal }}</span>
-              <span class="total-count">/ {{ m.total }}</span>
-            </div>
-            <div class="month-pct"
-              [class.pct-good]="m.pct >= 50"
-              [class.pct-bad]="m.pct < 50 && m.total > 0">
-              {{ m.total > 0 ? '%' + m.pct : '—' }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="chart-card">
-        <div class="chart-title">Marka Portal Durumu</div>
-        <div class="tab-row">
-          <button [class]="'tab-btn' + (activeTab === 'noportal' ? ' active' : '')" (click)="setTab('noportal')">
-            ❌ Kullanmıyor ({{ noPortalBrands }})
-          </button>
-          <button [class]="'tab-btn' + (activeTab === 'portal' ? ' active' : '')" (click)="setTab('portal')">
-            ✅ Portaldan Giriyor ({{ portalBrands }})
-          </button>
-        </div>
-        <input class="search-input" type="text" placeholder="Marka ara..."
-          [(ngModel)]="searchText" (ngModelChange)="applyTabFilter()" />
-        <div class="brand-list">
-          <div class="brand-item" *ngFor="let b of filteredBrands">
-            <div class="brand-info">
-              <span class="brand-name">{{ b.brandName }}</span>
-              <span class="brand-mall">{{ b.mallCode }}</span>
-            </div>
-            <div class="brand-actions">
-              <span class="entry-count">{{ b.totalEntries }} giriş</span>
-              <button class="mail-btn" (click)="openMailModal(b)" *ngIf="!b.usesPortal">
-                📧 Mail
-              </button>
-            </div>
-          </div>
-          <div class="empty-list" *ngIf="filteredBrands.length === 0">
-            Sonuç bulunamadı
-          </div>
-        </div>
-        <div class="list-footer" *ngIf="activeTab === 'noportal' && noPortalBrands > 0">
-          <button class="btn-mail-all" (click)="mailAllNoPortal()">
-            📧 Tümüne Mail Gönder ({{ noPortalBrands }})
-          </button>
-        </div>
-      </div>
-
+    <div class="main-tab-row">
+      <button [class]="'main-tab' + (activeTab === 'noportal' ? ' active' : '')" (click)="setTab('noportal')">
+        ❌ Kullanmıyor ({{ noPortalBrands }})
+      </button>
+      <button [class]="'main-tab' + (activeTab === 'portal' ? ' active' : '')" (click)="setTab('portal')">
+        ✅ Portaldan Giriyor ({{ portalBrands }})
+      </button>
+      <button [class]="'main-tab' + (activeTab === 'table' ? ' active' : '')" (click)="setTab('table')">
+        📋 Detay Tablo ({{ totalBrands }})
+      </button>
     </div>
+
+    <input class="search-input" type="text" placeholder="Marka, cari unvan, sözleşme no veya lot ara..."
+      [(ngModel)]="searchText" (ngModelChange)="applyTabFilter()" />
+
+    <!-- DETAY TABLO -->
+    <ng-container *ngIf="activeTab === 'table'">
+      <div class="detail-table-wrap">
+        <table class="detail-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Marka</th>
+              <th>Cari Unvan</th>
+              <th>AVM</th>
+              <th>Sözleşme</th>
+              <th>Lot</th>
+              <th *ngFor="let m of months">{{ m }}</th>
+              <th>Portal</th>
+              <th>Toplam</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let b of filteredBrands; let i = index"
+              [class.row-portal]="b.usesPortal"
+              [class.row-noportal]="!b.usesPortal">
+              <td class="td-num">{{ i + 1 }}</td>
+              <td class="td-brand">{{ b.brandName }}</td>
+              <td class="td-tenant">{{ b.tenantName || '—' }}</td>
+              <td class="td-mall">{{ b.mallCode }}</td>
+              <td class="td-contract">{{ b.contractNo }}</td>
+              <td class="td-lot">{{ b.lotNo }}</td>
+              <td *ngFor="let entry of b.monthlyData" class="td-month"
+                [title]="getMonthTitle(entry)">
+                <span [class]="'month-icon ' + (entry.total === 0 ? 'mi-empty' : entry.portal === entry.total ? 'mi-full' : entry.portal > 0 ? 'mi-partial' : 'mi-none')">
+                  {{ getMonthIcon(entry) }}
+                </span>
+              </td>
+              <td class="td-portal">
+                <span [class]="'portal-badge ' + (b.usesPortal ? 'pb-yes' : 'pb-no')">
+                  {{ b.usesPortal ? 'Kullanıyor' : 'Portal Yok' }}
+                </span>
+              </td>
+              <td class="td-total">{{ b.totalEntries }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <!-- MARKA LİSTESİ -->
+    <ng-container *ngIf="activeTab !== 'table'">
+      <div class="charts-grid">
+
+        <div class="chart-card">
+          <div class="chart-title">Aylara Göre Portal Kullanımı</div>
+          <div class="month-bars">
+            <div class="month-row" *ngFor="let m of monthStats">
+              <div class="month-label">{{ m.month }}</div>
+              <div class="month-bar-bg">
+                <div class="month-bar-total" [style.width.%]="getBarWidth(m.total, maxMonthTotal())"></div>
+                <div class="month-bar-portal" [style.width.%]="getBarWidth(m.portal, maxMonthTotal())"></div>
+              </div>
+              <div class="month-val">
+                <span class="portal-count">{{ m.portal }}</span>
+                <span class="total-count">/ {{ m.total }}</span>
+              </div>
+              <div class="month-pct"
+                [class.pct-good]="m.pct >= 50"
+                [class.pct-bad]="m.pct < 50 && m.total > 0">
+                {{ m.total > 0 ? '%' + m.pct : '—' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="brand-list">
+            <div class="brand-item" *ngFor="let b of filteredBrands">
+              <div class="brand-info">
+                <div class="brand-name-wrap">
+                  <span class="brand-name">{{ b.brandName }}</span>
+                  <span class="brand-tenant" *ngIf="b.tenantName">{{ b.tenantName }}</span>
+                </div>
+                <span class="brand-mall">{{ b.mallCode }}</span>
+                <span class="brand-contract">{{ b.contractNo }}</span>
+              </div>
+              <div class="brand-actions">
+                <span class="entry-count">{{ b.totalEntries }} giriş</span>
+                <button class="mail-btn" (click)="openMailModal(b)" *ngIf="!b.usesPortal">
+                  📧 Mail
+                </button>
+              </div>
+            </div>
+            <div class="empty-list" *ngIf="filteredBrands.length === 0">
+              Sonuç bulunamadı
+            </div>
+          </div>
+          <div class="list-footer" *ngIf="activeTab === 'noportal' && noPortalBrands > 0">
+            <button class="btn-mail-all" (click)="mailAllNoPortal()">
+              📧 Tümüne Mail Gönder ({{ noPortalBrands }})
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </ng-container>
 
   </ng-container>
 
+  <!-- MAIL MODAL -->
   <div class="modal-overlay" [class.open]="showMailModal" (click)="closeMailModal()">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
