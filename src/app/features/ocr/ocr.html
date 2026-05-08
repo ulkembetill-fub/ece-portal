@@ -1,0 +1,168 @@
+<div class="ocr-wrap">
+
+  <div class="ocr-header">
+    <div class="header-top">
+      <div class="header-left">
+        <h2>OCR Raporu</h2>
+        <span class="record-count" *ngIf="!loading && filteredResults.length > 0">
+          {{ filteredResults.length }} kontrat &nbsp;·&nbsp; Portföy OCR: <strong>{{ formatOcr(portfolioOcr) }}</strong>
+        </span>
+      </div>
+      <div class="header-right">
+        <select [(ngModel)]="selectedYear" class="year-select">
+          <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+        </select>
+        <select [(ngModel)]="selectedMall" class="year-select">
+          <option value="">Tüm AVM</option>
+          <option *ngFor="let m of allMalls" [value]="m">{{ m }}</option>
+        </select>
+        <button class="btn-load" (click)="loadData()" [disabled]="loading">
+          {{ loading ? 'Yükleniyor...' : '⟳ Veriyi Getir' }}
+        </button>
+      </div>
+    </div>
+    <div class="header-bottom" *ngIf="filteredResults.length > 0">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="text" placeholder="Marka, kontrat, kiracı, lot ara..."
+          [(ngModel)]="searchText" (ngModelChange)="applyFilter()" />
+        <button class="search-clear" *ngIf="searchText" (click)="searchText=''; applyFilter()">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && allResults.length === 0 && !error">
+    <p>Yıl ve AVM seçip "Veriyi Getir" butonuna tıklayın.</p>
+  </div>
+
+  <div class="error-banner" *ngIf="error">{{ error }}</div>
+
+  <div class="summary-grid" *ngIf="filteredResults.length > 0">
+    <div class="sum-card">
+      <div class="sum-label">Toplam Kira (Rent)</div>
+      <div class="sum-value">{{ fmt(totalRent) }} ₺</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Toplam CAC</div>
+      <div class="sum-value">{{ fmt(totalCac) }} ₺</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Toplam Ciro</div>
+      <div class="sum-value">{{ fmt(totalTurnover) }} ₺</div>
+    </div>
+    <div class="sum-card accent">
+      <div class="sum-label">Portföy OCR</div>
+      <div class="sum-value">{{ formatOcr(portfolioOcr) }}</div>
+    </div>
+  </div>
+
+  <div class="loading-bar" *ngIf="loading">
+    <div class="loading-fill"></div>
+  </div>
+
+  <div class="table-wrap" *ngIf="filteredResults.length > 0 || loading">
+    <table class="ocr-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Kontrat No</th>
+          <th>AVM</th>
+          <th>Lot Tipi</th>
+          <th>Marka</th>
+          <th>Sektör</th>
+          <th>Lot No</th>
+          <th class="num">m²</th>
+          <th class="num">TO%</th>
+          <th>Dönem</th>
+          <th class="num">Rent (₺)</th>
+          <th class="num">CAC (₺)</th>
+          <th class="num">Ciro (₺)</th>
+          <th class="num">TO Rent (₺)</th>
+          <th class="num">OCR</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngIf="loading">
+          <tr *ngFor="let i of [1,2,3,4,5]">
+            <td colspan="15" class="loading-cell">yükleniyor...</td>
+          </tr>
+        </ng-container>
+
+        <ng-container *ngFor="let r of filteredResults">
+          <!-- ANA SATIR -->
+          <tr class="contract-row" (click)="toggleExpand(r)">
+            <td class="expand-td">
+              <span class="toggle">{{ r.expanded ? '▼' : '▶' }}</span>
+            </td>
+            <td class="contract-no">{{ r.contractNo }}</td>
+            <td class="mall-code">{{ r.mallCode }}</td>
+            <td><span class="lot-badge">{{ r.lotType }}</span></td>
+            <td class="brand-name">{{ r.brandName }}</td>
+            <td><span class="sector-badge">{{ r.sector }}</span></td>
+            <td class="lot-no">{{ r.lotNo }}</td>
+            <td class="num">{{ r.areaM2 | number:'1.0-0' }}</td>
+            <td class="num">%{{ r.toRate }}</td>
+            <td class="period">{{ r.period }}</td>
+            <td class="num">{{ fmt(r.rent) }}</td>
+            <td class="num">{{ fmt(r.cac) }}</td>
+            <td class="num">{{ fmt(r.turnover) }}</td>
+            <td class="num" [class.to-rent-pos]="r.toRent > 0" [class.to-rent-neg]="r.toRent < 0">
+              {{ fmt(r.toRent) }}
+            </td>
+            <td class="num">
+              <span [class]="'ocr-badge ' + ocrClass(r.ocr)">{{ formatOcr(r.ocr) }}</span>
+            </td>
+          </tr>
+
+          <!-- AYLIK DETAY -->
+          <ng-container *ngIf="r.expanded">
+            <tr *ngFor="let m of r.monthData" class="month-row"
+                [class.month-empty]="m.turnover === 0 && m.rent === 0">
+              <td></td>
+              <td colspan="9" class="month-label">
+                <span class="month-name">{{ months[m.month - 1] }}</span>
+              </td>
+              <td class="num month-val">{{ m.rent ? fmt(m.rent) : '—' }}</td>
+              <td class="num month-val">{{ m.cac ? fmt(m.cac) : '—' }}</td>
+              <td class="num month-val">{{ m.turnover ? fmt(m.turnover) : '—' }}</td>
+              <td class="num month-val"
+                  [class.to-rent-pos]="m.toRent > 0"
+                  [class.to-rent-neg]="m.toRent < 0">
+                {{ m.turnover ? fmt(m.toRent) : '—' }}
+              </td>
+              <td class="num month-val">
+                <span *ngIf="m.ocr !== null" [class]="'ocr-badge ocr-sm ' + ocrClass(m.ocr)">
+                  {{ formatOcr(m.ocr) }}
+                </span>
+                <span *ngIf="m.ocr === null" class="dim">—</span>
+              </td>
+            </tr>
+          </ng-container>
+        </ng-container>
+      </tbody>
+      <tfoot *ngIf="filteredResults.length > 0">
+        <tr class="total-row">
+          <td></td>
+          <td colspan="9">TOPLAM ({{ filteredResults.length }} kontrat)</td>
+          <td class="num">{{ fmt(totalRent) }}</td>
+          <td class="num">{{ fmt(totalCac) }}</td>
+          <td class="num">{{ fmt(totalTurnover) }}</td>
+          <td class="num">{{ fmt(totalToRent) }}</td>
+          <td class="num">
+            <span [class]="'ocr-badge ' + ocrClass(portfolioOcr)">{{ formatOcr(portfolioOcr) }}</span>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="formula-box" *ngIf="filteredResults.length > 0">
+    <span class="formula-title">OCR Formülü:</span>
+    <span class="formula-text">OCR = (Rent + CAC + TO_Rent) / Ciro</span>
+    <span class="formula-text" style="font-size:11px; opacity:0.7;">TO_Rent = Ciro × TO% − Kira</span>
+    <span class="formula-legend ocr-low">%8 altı: İyi</span>
+    <span class="formula-legend ocr-mid">%8–12: Orta</span>
+    <span class="formula-legend ocr-high">%12 üstü: Yüksek</span>
+  </div>
+
+</div>

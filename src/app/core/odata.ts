@@ -75,4 +75,43 @@ export class OdataService {
     const url = `${environment.odata.url}?$filter=Year eq ${year}&$select=Mall_Code,Brand_Name,Brand_Code,Customer_No,Month,Amount,Created_From_Web_Portal,Approved&$top=10000`;
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
+
+  // OCR — ContractList
+  getOcrContractList(mallCode: string) {
+    const mallFilter = mallCode ? ` and Mall_Code eq '${mallCode}'` : '';
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'ContractList')
+      + `?$filter=Status eq 'Y%C3%BCr%C3%BCrl%C3%BCkte'${mallFilter}&$select=No,Mall_Code,Mall_Name,Brand_Name,Tenant_Name,Lot_No,Lot_Location_Code,Area_m2,SectorName,Rent_Invoice_Ratio,Period_Remark,Leasing_Method&$top=5000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
+
+  // OCR — Rent (Invoice_Month bazında)
+  getOcrRentAll(mallCode: string, year: number) {
+    const mallFilter = mallCode ? ` and Global_Dimension_1_Code eq '${mallCode}'` : '';
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'CustomerLedgerEntries')
+      + `?$filter=Invoice_Type eq 'KIRA' and Document_Type eq 'Fatura' and Reversed eq false and Invoice_Year eq ${year}${mallFilter}&$select=Contract_No,Original_Amt_LCY,Invoice_Month&$top=10000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
+
+  // OCR — CAC (Invoice_Month bazında)
+  getOcrCacAll(mallCode: string, year: number) {
+    const mallFilter = mallCode ? ` and Global_Dimension_1_Code eq '${mallCode}'` : '';
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'CustomerLedgerEntries')
+      + `?$filter=Invoice_Type eq 'GENEL GIDER' and Document_Type eq 'Fatura' and Reversed eq false and Invoice_Year eq ${year}${mallFilter}&$select=Contract_No,Original_Amt_LCY,Invoice_Month&$top=10000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
+
+  // OCR — Ciro (Month bazında)
+  getOcrTurnoverAll(mallCode: string, year: number) {
+    const mallFilter = mallCode ? ` and Mall_Code eq '${mallCode}'` : '';
+    const url = environment.odata.url
+      + `?$filter=Year eq ${year}${mallFilter}&$select=Contract_No,Amount,Month&$top=10000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
+
+  getOcrRent(mallCode: string, year: number) { return this.getOcrRentAll(mallCode, year); }
+  getOcrCac(mallCode: string, year: number) { return this.getOcrCacAll(mallCode, year); }
+  getOcrTurnover(mallCode: string, year: number) { return this.getOcrTurnoverAll(mallCode, year); }
 }
