@@ -63,14 +63,19 @@ export class Ocr implements OnInit {
   get totalTurnover(): number { return this.filteredResults.reduce((s, r) => s + r.turnover, 0); }
   get totalToRent(): number { return this.filteredResults.reduce((s, r) => s + r.toRent, 0); }
   get portfolioOcr(): number | null {
+    const effectiveToRent = this.filteredResults.reduce((s, r) => s + Math.max(0, r.toRent), 0);
     return this.totalTurnover > 0
-      ? (this.totalRent + this.totalCac + this.totalToRent) / this.totalTurnover
+      ? (this.totalRent + effectiveToRent + this.totalCac) / this.totalTurnover
       : null;
   }
 
   constructor(private odata: OdataService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {}
+
+  private isMonthly(period: string): boolean {
+    return (period || '').trim() === 'Aylık';
+  }
 
   loadData() {
     this.loading = true;
@@ -105,7 +110,8 @@ export class Ocr implements OnInit {
 
         this.allResults = (res.contracts.value || [])
           .map((c: any) => {
-            const toPct = (c.Rent_Invoice_Ratio || 0) / 100;
+            const toPct   = (c.Rent_Invoice_Ratio || 0) / 100;
+            const monthly = this.isMonthly(c.Period_Remark);
 
             const monthData: MonthData[] = Array.from({ length: 12 }, (_, i) => {
               const m        = i + 1;
@@ -113,19 +119,32 @@ export class Ocr implements OnInit {
               const rent     = (rentMap.get(key) || 0) / 1.20;
               const cac      = (cacMap.get(key) || 0) / 1.20;
               const turnover = turnMap.get(key) || 0;
-              // Ciro kirası sabit kiradan yüksekse fark kesilir, yoksa 0
-              const toRent   = turnover > 0 ? Math.max(0, turnover * toPct - rent) : 0;
-              // OCR = (Sabit Kira + Ciro Kira Farkı + CAC) / Ciro
-              const ocr      = turnover > 0 ? (rent + toRent + cac) / turnover : null;
+
+              let toRent: number;
+              if (monthly) {
+                // Aylık: negatif olamaz
+                toRent = turnover > 0 ? Math.max(0, turnover * toPct - rent) : 0;
+              } else {
+                // Ay Sıralı: negatif göster ama OCR hesabında sıfır alınacak
+                toRent = turnover * toPct - rent;
+              }
+
+              // OCR hesabında her zaman Math.max(0, toRent) kullan
+              const ocr = turnover > 0
+                ? (rent + Math.max(0, toRent) + cac) / turnover
+                : null;
+
               return { month: m, rent, cac, turnover, toRent, ocr };
             });
 
-            const totalRent     = monthData.reduce((s, m) => s + m.rent, 0);
-            const totalCac      = monthData.reduce((s, m) => s + m.cac, 0);
-            const totalTurnover = monthData.reduce((s, m) => s + m.turnover, 0);
-            const totalToRent   = monthData.reduce((s, m) => s + m.toRent, 0);
+            const totalRent         = monthData.reduce((s, m) => s + m.rent, 0);
+            const totalCac          = monthData.reduce((s, m) => s + m.cac, 0);
+            const totalTurnover     = monthData.reduce((s, m) => s + m.turnover, 0);
+            const totalToRent       = monthData.reduce((s, m) => s + m.toRent, 0);
+            const effectiveToRent   = monthData.reduce((s, m) => s + Math.max(0, m.toRent), 0);
+
             const ocr = totalTurnover > 0
-              ? (totalRent + totalToRent + totalCac) / totalTurnover
+              ? (totalRent + effectiveToRent + totalCac) / totalTurnover
               : null;
 
             return {
