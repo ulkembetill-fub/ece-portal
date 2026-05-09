@@ -49,6 +49,14 @@ export class OdataService {
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 
+  // Tüm yılların net bakiyesi — AVM + Müşteri bazında, sadece açık faturalar
+  getAgingAllYearsNet() {
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'CustomerLedgerEntries')
+      + `?$filter=Open eq true and Document_Type eq 'Fatura'&$select=Customer_No,Mall_Code,Remaining_Amt_LCY&$top=50000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
+
   getMalls() {
     const url = environment.odata.url
       .replace('ContractTurnoverEntry', 'MallL%C4%B1st')
@@ -76,7 +84,6 @@ export class OdataService {
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 
-  // OCR — ContractList
   getOcrContractList(mallCode: string) {
     const mallFilter = mallCode ? ` and Mall_Code eq '${mallCode}'` : '';
     const url = environment.odata.url
@@ -85,7 +92,6 @@ export class OdataService {
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 
-  // OCR — Rent (Invoice_Month bazında)
   getOcrRentAll(mallCode: string, year: number) {
     const mallFilter = mallCode ? ` and Global_Dimension_1_Code eq '${mallCode}'` : '';
     const url = environment.odata.url
@@ -94,7 +100,6 @@ export class OdataService {
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 
-  // OCR — CAC (Invoice_Month bazında)
   getOcrCacAll(mallCode: string, year: number) {
     const mallFilter = mallCode ? ` and Global_Dimension_1_Code eq '${mallCode}'` : '';
     const url = environment.odata.url
@@ -103,7 +108,6 @@ export class OdataService {
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 
-  // OCR — Ciro (Month bazında)
   getOcrTurnoverAll(mallCode: string, year: number) {
     const mallFilter = mallCode ? ` and Mall_Code eq '${mallCode}'` : '';
     const url = environment.odata.url
