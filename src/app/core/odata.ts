@@ -49,7 +49,6 @@ export class OdataService {
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 
-  // Tüm yılların net bakiyesi — AVM + Müşteri bazında, sadece açık faturalar
   getAgingAllYearsNet() {
     const url = environment.odata.url
       .replace('ContractTurnoverEntry', 'CustomerLedgerEntries')
@@ -81,6 +80,31 @@ export class OdataService {
 
   getPortalKullanim(year: number) {
     const url = `${environment.odata.url}?$filter=Year eq ${year}&$select=Mall_Code,Brand_Name,Brand_Code,Customer_No,Month,Amount,Created_From_Web_Portal,Approved&$top=10000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
+
+  getMissingDepositContracts(mallCode: string) {
+    const mallFilter = mallCode ? ` and Mall_Code eq '${mallCode}'` : '';
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'ContractList')
+      + `?$filter=Status eq 'Y%C3%BCr%C3%BCrl%C3%BCkte'${mallFilter}&$select=No,Mall_Code,Mall_Name,Brand_Name,Tenant_Name,Lot_No,Lot_Location_Code,Deposit_Month_Count,Deposit_Including_VAT,Rent_Increase_Date&$top=5000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
+
+  getMissingDepositRent(mallCode: string) {
+    const today = new Date().toISOString().split('T')[0];
+    const mallFilter = mallCode ? ` and Mall_Code eq '${mallCode}'` : '';
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'KiralamaBilgileri')
+      + `?$filter=Monthly_Rental_Amount gt 0 and Contract_Starting_Date le ${today} and Contract_Ending_Date ge ${today}${mallFilter}&$select=Contract_No,Monthly_Rental_Amount,Mall_Code&$top=5000`;
+    return this.http.get<any>(url, { headers: this.getHeaders() });
+  }
+
+  getMissingDepositLetters(mallCode: string) {
+    const mallFilter = mallCode ? ` and Mall_Code eq '${mallCode}'` : '';
+    const url = environment.odata.url
+      .replace('ContractTurnoverEntry', 'Guarantees_Letter')
+      + `?$filter=Direction eq 'Al%C4%B1nan'${mallFilter}&$select=Contract_No,No,Amount,Amount_LCY,Date_Received,Due_Date,Last_Extension_Date,Return_Date,Document_No,Bank_Name&$top=10000`;
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 

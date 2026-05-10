@@ -1,0 +1,132 @@
+<div class="md-wrap">
+
+  <div class="md-header">
+    <div class="header-top">
+      <div class="header-left">
+        <h2>Missing Deposit</h2>
+        <span class="record-count" *ngIf="!loading && filteredResults.length > 0">
+          {{ filteredResults.length }} kontrat
+          &nbsp;·&nbsp;
+          <span class="badge-missing">{{ totalMissing }} eksik</span>
+          &nbsp;·&nbsp;
+          <span class="badge-ok">{{ totalOk }} tamam</span>
+          &nbsp;·&nbsp;
+          Toplam Eksik: <strong class="missing-total">{{ fmt(totalMissingAmount) }} ₺</strong>
+        </span>
+      </div>
+      <div class="header-right">
+        <select [(ngModel)]="selectedMall" class="year-select">
+          <option value="">Tüm AVM</option>
+          <option *ngFor="let m of allMalls" [value]="m">{{ m }}</option>
+        </select>
+        <button class="btn-load" (click)="loadData()" [disabled]="loading">
+          {{ loading ? 'Yükleniyor...' : '⟳ Veriyi Getir' }}
+        </button>
+      </div>
+    </div>
+    <div class="header-bottom" *ngIf="allResults.length > 0">
+      <div class="filter-tabs">
+        <button [class.active]="filterMode === 'all'" (click)="filterMode='all'; applyFilter()">Tümü</button>
+        <button [class.active]="filterMode === 'missing'" (click)="filterMode='missing'; applyFilter()">❌ Eksik</button>
+        <button [class.active]="filterMode === 'ok'" (click)="filterMode='ok'; applyFilter()">✅ Tamam</button>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="text"
+          placeholder="Marka, kontrat, kiracı, lot ara..."
+          [(ngModel)]="searchText" (ngModelChange)="applyFilter()" />
+        <button class="search-clear" *ngIf="searchText" (click)="searchText=''; applyFilter()">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && allResults.length === 0 && !error">
+    <p>AVM seçip "Veriyi Getir" butonuna tıklayın.</p>
+  </div>
+
+  <div class="error-banner" *ngIf="error">{{ error }}</div>
+
+  <div class="loading-bar" *ngIf="loading">
+    <div class="loading-fill"></div>
+  </div>
+
+  <div class="table-wrap" *ngIf="filteredResults.length > 0 || loading">
+    <table class="md-table">
+      <thead>
+        <tr>
+          <th>Kontrat No</th>
+          <th>AVM</th>
+          <th>Lot</th>
+          <th>Tip</th>
+          <th>Marka</th>
+          <th class="num">KDV</th>
+          <th class="num">Dep. Ay</th>
+          <th class="num">Mevcut Kira (₺)</th>
+          <th class="num">Talep Dep. (₺)</th>
+          <th class="num">Mevcut Dep. (₺)</th>
+          <th class="num">Fark (₺)</th>
+          <th class="num">Mektup</th>
+          <th>Son Mektup Tarihi</th>
+          <th>En Yakın Vade</th>
+          <th class="num">Kalan Gün</th>
+          <th>Kira Artış Tarihi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngIf="loading">
+          <tr *ngFor="let i of [1,2,3,4,5]">
+            <td colspan="16" class="loading-cell">yükleniyor...</td>
+          </tr>
+        </ng-container>
+        <tr *ngFor="let r of filteredResults"
+            [class.row-missing]="r.difference < -1"
+            [class.row-ok]="r.difference >= -1">
+          <td class="contract-no">{{ r.contractNo }}</td>
+          <td class="mall-code">{{ r.mallCode }}</td>
+          <td class="lot-no">{{ r.lotNo }}</td>
+          <td><span class="lot-badge">{{ r.lotType }}</span></td>
+          <td class="brand-name">{{ r.brandName }}</td>
+          <td class="num">
+            <span class="vat-badge" [class.vat-yes]="r.depositIncludesVat">
+              {{ r.depositIncludesVat ? 'KDV+' : 'Net' }}
+            </span>
+          </td>
+          <td class="num">{{ r.depositMonthCount }}</td>
+          <td class="num">{{ fmt(r.monthlyRent) }}</td>
+          <td class="num">{{ fmt(r.requestedDeposit) }}</td>
+          <td class="num">{{ fmt(r.currentDeposit) }}</td>
+          <td class="num">
+            <span [class]="diffClass(r.difference)" class="diff-badge">
+              {{ r.difference >= 0 ? '+' : '' }}{{ fmt(r.difference) }}
+            </span>
+          </td>
+          <td class="num">
+            <span *ngIf="r.activeLetterCount === 0" class="letter-none">Yok</span>
+            <span *ngIf="r.activeLetterCount === 1" class="letter-one">1</span>
+            <span *ngIf="r.activeLetterCount > 1" class="letter-multi">{{ r.activeLetterCount }} mektup</span>
+            <span *ngIf="r.returnedLetterCount > 0" class="letter-returned"> ({{ r.returnedLetterCount }} iade)</span>
+          </td>
+          <td>{{ fmtDate(r.lastLetterDate) }}</td>
+          <td>{{ fmtDate(r.nearestDueDate) }}</td>
+          <td class="num">
+            <span *ngIf="r.remainingDays !== null" [class]="remainingClass(r.remainingDays)">
+              {{ r.remainingDays }}
+            </span>
+            <span *ngIf="r.remainingDays === null">—</span>
+          </td>
+          <td>{{ fmtDate(r.rentIncreaseDate) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="info-box" *ngIf="filteredResults.length > 0">
+    <span>💡 Talep Dep. = Mevcut Kira × (KDV dahilse ×1.20) × Dep. Ay Sayısı</span>
+    <span class="diff-missing">Eksik</span>
+    <span class="diff-ok">Tamam</span>
+    <span class="diff-excess">Fazla</span>
+    <span class="days-overdue">Vadesi Geçmiş</span>
+    <span class="days-warning">30 Gün İçinde</span>
+  </div>
+
+</div>
