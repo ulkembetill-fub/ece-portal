@@ -39,6 +39,7 @@
 
   <div class="ca-body" *ngIf="loaded">
 
+    <!-- KPI -->
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-label">Toplam Ciro</div>
@@ -66,6 +67,7 @@
       </div>
     </div>
 
+    <!-- GRAFİKLER -->
     <div class="charts-grid">
 
       <div class="chart-card wide">
@@ -105,6 +107,26 @@
         <div class="chart-title">📊 Sektör Aylık Trend (Top 6)</div>
         <div class="chart-body">
           <canvas #sectorTrend></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">
+          🏆 Top 10 Marka
+          <span class="chart-sub">— {{ selectedMonth > 0 ? months[selectedMonth-1] : 'Tüm Yıl' }} · {{ selectedYears[selectedYears.length-1] }}</span>
+        </div>
+        <div class="chart-body tall">
+          <canvas #top10Chart></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">
+          🌊 Mevsimsellik Analizi
+          <span class="chart-sub">— Yıllık karşılaştırma + ortalama</span>
+        </div>
+        <div class="chart-body">
+          <canvas #seasonChart></canvas>
         </div>
       </div>
 

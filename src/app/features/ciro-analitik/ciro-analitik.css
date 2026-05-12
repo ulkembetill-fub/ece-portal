@@ -246,4 +246,6 @@
 .pct-toggle:hover {
   border-color: var(--accent3);
   color: var(--text);
+}.chart-body.tall {
+  height: 360px;
 }

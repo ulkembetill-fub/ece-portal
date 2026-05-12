@@ -34,6 +34,8 @@ const MALL_COLORS: Record<string, string> = {
   'CPI': '#f97316',
 };
 
+const YEAR_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+
 function getSectorColor(sector: string): string {
   const key = Object.keys(SECTOR_COLORS).find(k =>
     sector?.toLowerCase().includes(k.toLowerCase())
@@ -54,6 +56,8 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
   @ViewChild('mallChart') mallChartRef!: ElementRef;
   @ViewChild('sectorDonut') sectorDonutRef!: ElementRef;
   @ViewChild('sectorTrend') sectorTrendRef!: ElementRef;
+  @ViewChild('top10Chart') top10ChartRef!: ElementRef;
+  @ViewChild('seasonChart') seasonChartRef!: ElementRef;
 
   months = MONTHS;
   allMalls = ['MCA', 'TCA', 'AFI', 'FBI', 'PAI', 'MCB', 'PAA', 'MWI', 'CPI'];
@@ -61,7 +65,7 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
   selectedYears: number[] = [2026];
   availableYears = [2024, 2025, 2026];
   selectedMonth = 0;
-  showPct = false; // sektör pie yüzde toggle
+  showPct = false;
 
   loading = false;
   error = '';
@@ -79,6 +83,8 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
   private mallChartInstance: any = null;
   private sectorDonutInstance: any = null;
   private sectorTrendInstance: any = null;
+  private top10ChartInstance: any = null;
+  private seasonChartInstance: any = null;
 
   constructor(private odata: OdataService, private cdr: ChangeDetectorRef) {}
 
@@ -122,6 +128,16 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
       yearRequests[`yprev`] = this.odata.getTurnover(minYear - 1).pipe(catchError(() => of({ value: [] })));
     }
 
+    // Mevsimsellik için tüm seçili yılların verisi lazım — zaten yükleniyor
+    // Eğer birden fazla yıl seçilmemişse önceki 2 yılı da çek
+    if (this.selectedYears.length === 1) {
+      const y = this.selectedYears[0];
+      if (!yearRequests[`y${y-2}`]) {
+        yearRequests[`yseas1`] = this.odata.getTurnover(y - 1).pipe(catchError(() => of({ value: [] })));
+        yearRequests[`yseas2`] = this.odata.getTurnover(y - 2).pipe(catchError(() => of({ value: [] })));
+      }
+    }
+
     forkJoin(yearRequests).subscribe({
       next: (res: any) => {
         this.contractMap.clear();
@@ -133,15 +149,20 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
           this.rawDataByYear.set(year, res[`y${year}`]?.value || []);
         }
 
-        if (res['yprev']) {
-          this.rawDataByYear.set(minYear - 1, res['yprev']?.value || []);
+        if (res['yprev']) this.rawDataByYear.set(minYear - 1, res['yprev']?.value || []);
+        if (res['yseas1']) {
+          const y = this.selectedYears[0];
+          this.rawDataByYear.set(y - 1, res['yseas1']?.value || []);
+        }
+        if (res['yseas2']) {
+          const y = this.selectedYears[0];
+          this.rawDataByYear.set(y - 2, res['yseas2']?.value || []);
         }
 
         this.calculateKPIs();
         this.loaded = true;
         this.loading = false;
         this.cdr.detectChanges();
-
         setTimeout(() => this.buildAllCharts(), 150);
       },
       error: (err: any) => {
@@ -203,6 +224,8 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
     this.buildMallChart();
     this.buildSectorDonut();
     this.buildSectorTrend();
+    this.buildTop10Chart();
+    this.buildSeasonChart();
   }
 
   private destroyChart(instance: any): null {
@@ -215,7 +238,6 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
     const ctx = this.trendChartRef?.nativeElement?.getContext('2d');
     if (!ctx) return;
 
-    const yearColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
     let datasets: any[] = [];
 
     if (this.selectedMall) {
@@ -226,11 +248,9 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
         return {
           label: String(year),
           data: monthly,
-          borderColor: yearColors[i % yearColors.length],
-          backgroundColor: yearColors[i % yearColors.length] + '22',
-          tension: 0.4,
-          fill: false,
-          pointRadius: 4,
+          borderColor: YEAR_COLORS[i % YEAR_COLORS.length],
+          backgroundColor: YEAR_COLORS[i % YEAR_COLORS.length] + '22',
+          tension: 0.4, fill: false, pointRadius: 4,
         };
       });
     } else {
@@ -246,10 +266,7 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
           data: monthly,
           borderColor: MALL_COLORS[mall] || '#6b7280',
           backgroundColor: (MALL_COLORS[mall] || '#6b7280') + '22',
-          tension: 0.4,
-          fill: false,
-          pointRadius: 3,
-          borderWidth: 2,
+          tension: 0.4, fill: false, pointRadius: 3, borderWidth: 2,
         });
       }
     }
@@ -258,8 +275,7 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
       type: 'line',
       data: { labels: MONTHS, datasets },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: { labels: { color: '#94a3b8', boxWidth: 12 } },
           tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${this.fmt(c.raw)}` } }
@@ -277,17 +293,15 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
     const ctx = this.mallChartRef?.nativeElement?.getContext('2d');
     if (!ctx) return;
 
-    const yearColors = ['#3b82f6', '#10b981', '#f59e0b'];
     const malls = this.selectedMall ? [this.selectedMall] : this.allMalls;
-    const month = Number(this.selectedMonth); // number'a zorla
+    const month = Number(this.selectedMonth);
 
     const datasets = this.selectedYears.map((year, i) => {
       const data = this.rawDataByYear.get(year) || [];
       const mallTotals = malls.map(mall => {
         const mallData = data.filter((d: any) => d.Mall_Code === mall);
         if (month > 0) {
-          return mallData
-            .filter((d: any) => Number(d.Month) === month)
+          return mallData.filter((d: any) => Number(d.Month) === month)
             .reduce((s: number, d: any) => s + (d.Amount || 0), 0);
         }
         return mallData.reduce((s: number, d: any) => s + (d.Amount || 0), 0);
@@ -295,10 +309,9 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
       return {
         label: String(year),
         data: mallTotals,
-        backgroundColor: yearColors[i % yearColors.length] + 'cc',
-        borderColor: yearColors[i % yearColors.length],
-        borderWidth: 1,
-        borderRadius: 4,
+        backgroundColor: YEAR_COLORS[i % YEAR_COLORS.length] + 'cc',
+        borderColor: YEAR_COLORS[i % YEAR_COLORS.length],
+        borderWidth: 1, borderRadius: 4,
       };
     });
 
@@ -306,8 +319,7 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
       type: 'bar',
       data: { labels: malls, datasets },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: { labels: { color: '#94a3b8' } },
           tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${this.fmt(c.raw)}` } }
@@ -347,33 +359,24 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
       type: 'doughnut',
       data: {
         labels,
-        datasets: [{
-          data: values,
-          backgroundColor: colors.map(c => c + 'cc'),
-          borderColor: colors,
-          borderWidth: 2,
-        }]
+        datasets: [{ data: values, backgroundColor: colors.map(c => c + 'cc'), borderColor: colors, borderWidth: 2 }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: {
             position: 'right',
             labels: {
-              color: '#94a3b8',
-              boxWidth: 12,
+              color: '#94a3b8', boxWidth: 12,
               generateLabels: (chart: any) => {
-                const data = chart.data;
-                return data.labels.map((label: string, i: number) => {
-                  const value = data.datasets[0].data[i];
+                return chart.data.labels.map((label: string, i: number) => {
+                  const value = chart.data.datasets[0].data[i];
                   const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
                   return {
                     text: showPct ? `${label} (${pct}%)` : label,
-                    fillStyle: data.datasets[0].backgroundColor[i],
-                    strokeStyle: data.datasets[0].borderColor[i],
-                    lineWidth: 1,
-                    index: i,
+                    fillStyle: chart.data.datasets[0].backgroundColor[i],
+                    strokeStyle: chart.data.datasets[0].borderColor[i],
+                    lineWidth: 1, index: i,
                   };
                 });
               }
@@ -423,8 +426,7 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
       type: 'bar',
       data: { labels: MONTHS, datasets },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: { labels: { color: '#94a3b8', boxWidth: 12 } },
           tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${this.fmt(c.raw)}` } }
@@ -432,6 +434,129 @@ export class CiroAnalitik implements OnInit, AfterViewInit {
         scales: {
           x: { stacked: true, ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
           y: { stacked: true, ticks: { color: '#64748b', callback: (v: any) => this.fmtShort(v) }, grid: { color: '#1e293b' } }
+        }
+      }
+    });
+  }
+
+  private buildTop10Chart() {
+    this.top10ChartInstance = this.destroyChart(this.top10ChartInstance);
+    const ctx = this.top10ChartRef?.nativeElement?.getContext('2d');
+    if (!ctx) return;
+
+    const latestYear = Math.max(...this.selectedYears);
+    const data = this.filterByMall(this.rawDataByYear.get(latestYear) || []);
+    const month = Number(this.selectedMonth);
+    const filtered = month > 0 ? data.filter((d: any) => Number(d.Month) === month) : data;
+
+    // Marka bazında topla
+    const brandTotals = new Map<string, { total: number; sector: string }>();
+    for (const d of filtered) {
+      const brand = d.Brand_Name || 'Bilinmiyor';
+      const sector = this.contractMap.get(d.Contract_No)?.SectorName || 'Diğer';
+      if (!brandTotals.has(brand)) brandTotals.set(brand, { total: 0, sector });
+      brandTotals.get(brand)!.total += d.Amount || 0;
+    }
+
+    const top10 = [...brandTotals.entries()]
+      .sort((a, b) => b[1].total - a[1].total)
+      .slice(0, 10);
+
+    const labels = top10.map(([brand]) => brand);
+    const values = top10.map(([, v]) => v.total);
+    const colors = top10.map(([, v]) => getSectorColor(v.sector));
+
+    this.top10ChartInstance = new Chart.Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Ciro',
+          data: values,
+          backgroundColor: colors.map(c => c + 'cc'),
+          borderColor: colors,
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (c: any) => ` ${this.fmt(c.raw)}` } }
+        },
+        scales: {
+          x: { ticks: { color: '#64748b', callback: (v: any) => this.fmtShort(v) }, grid: { color: '#1e293b' } },
+          y: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: '#1e293b' } }
+        }
+      }
+    });
+  }
+
+  private buildSeasonChart() {
+    this.seasonChartInstance = this.destroyChart(this.seasonChartInstance);
+    const ctx = this.seasonChartRef?.nativeElement?.getContext('2d');
+    if (!ctx) return;
+
+    // Tüm mevcut yılların verisi ile mevsimsellik hesapla
+    const allYears = [...this.rawDataByYear.keys()].sort();
+    const datasets: any[] = [];
+    const monthlyAvg = Array(12).fill(0);
+    let yearCount = 0;
+
+    for (const year of allYears) {
+      const data = this.filterByMall(this.rawDataByYear.get(year) || []);
+      if (data.length === 0) continue;
+
+      const monthly = Array(12).fill(0);
+      for (const d of data) monthly[(d.Month || 1) - 1] += d.Amount || 0;
+
+      // Sadece seçili yılları çizgi olarak göster
+      if (this.selectedYears.includes(year)) {
+        const i = this.selectedYears.indexOf(year);
+        datasets.push({
+          label: String(year),
+          data: monthly,
+          borderColor: YEAR_COLORS[i % YEAR_COLORS.length],
+          backgroundColor: 'transparent',
+          tension: 0.4,
+          pointRadius: 4,
+          borderWidth: 2,
+        });
+      }
+
+      // Ortalama için tüm yılları kullan
+      monthly.forEach((v, i) => monthlyAvg[i] += v);
+      yearCount++;
+    }
+
+    // Ortalama çizgisi
+    if (yearCount > 1) {
+      datasets.push({
+        label: 'Ortalama',
+        data: monthlyAvg.map(v => v / yearCount),
+        borderColor: '#f8fafc',
+        backgroundColor: 'transparent',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 2,
+        borderDash: [6, 3],
+      });
+    }
+
+    this.seasonChartInstance = new Chart.Chart(ctx, {
+      type: 'line',
+      data: { labels: MONTHS, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#94a3b8', boxWidth: 12 } },
+          tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${this.fmt(c.raw)}` } }
+        },
+        scales: {
+          x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+          y: { ticks: { color: '#64748b', callback: (v: any) => this.fmtShort(v) }, grid: { color: '#1e293b' } }
         }
       }
     });
