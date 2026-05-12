@@ -1,0 +1,114 @@
+<div class="ca-wrap">
+
+  <div class="ca-header">
+    <div class="header-top">
+      <div class="header-left">
+        <h2>Ciro Analitik</h2>
+        <span class="sub">AVM · Sektör · Trend Analizi</span>
+      </div>
+      <div class="header-right">
+        <div class="year-pills">
+          <button *ngFor="let y of availableYears"
+            [class.active]="isYearSelected(y)"
+            (click)="toggleYear(y)">{{ y }}</button>
+        </div>
+        <select [(ngModel)]="selectedMall" class="mall-select" (ngModelChange)="onFilterChange()">
+          <option value="">Tüm AVM</option>
+          <option *ngFor="let m of allMalls" [value]="m">{{ m }}</option>
+        </select>
+        <select [(ngModel)]="selectedMonth" class="mall-select" (ngModelChange)="onFilterChange()">
+          <option [value]="0">Tüm Yıl</option>
+          <option *ngFor="let m of months; let i = index" [value]="i + 1">{{ m }}</option>
+        </select>
+        <button class="btn-load" (click)="loadData()" [disabled]="loading">
+          {{ loading ? 'Yükleniyor...' : '⟳ Veriyi Getir' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && !loaded && !error">
+    <p>Yıl seçip "Veriyi Getir" butonuna tıklayın.</p>
+  </div>
+
+  <div class="error-banner" *ngIf="error">{{ error }}</div>
+
+  <div class="loading-bar" *ngIf="loading">
+    <div class="loading-fill"></div>
+  </div>
+
+  <div class="ca-body" *ngIf="loaded">
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Toplam Ciro</div>
+        <div class="kpi-value">{{ fmt(kpiTotal) }} ₺</div>
+        <div class="kpi-sub">{{ selectedMall || 'Tüm AVM' }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">YoY Büyüme</div>
+        <div class="kpi-value"
+          [class.growth-up]="kpiGrowth !== null && kpiGrowth >= 0"
+          [class.growth-down]="kpiGrowth !== null && kpiGrowth < 0">
+          {{ fmtGrowth(kpiGrowth) }}
+        </div>
+        <div class="kpi-sub">Aynı dönem geçen yıla göre</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">En İyi AVM</div>
+        <div class="kpi-value accent">{{ kpiBestMall }}</div>
+        <div class="kpi-sub">En yüksek ciro</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">En İyi Sektör</div>
+        <div class="kpi-value accent">{{ kpiBestSector }}</div>
+        <div class="kpi-sub">En yüksek ciro</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+
+      <div class="chart-card wide">
+        <div class="chart-title">
+          📈 Aylık Ciro Trendi
+          <span class="chart-sub" *ngIf="!selectedMall">— Tüm AVM'ler ({{ selectedYears[selectedYears.length-1] }})</span>
+          <span class="chart-sub" *ngIf="selectedMall">— {{ selectedMall }} · Yıl karşılaştırması</span>
+        </div>
+        <div class="chart-body">
+          <canvas #trendChart></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card wide">
+        <div class="chart-title">
+          🏢 AVM Bazında Karşılaştırma
+          <span class="chart-sub">— {{ selectedMonth > 0 ? months[selectedMonth-1] : 'Tüm Yıl' }}</span>
+        </div>
+        <div class="chart-body">
+          <canvas #mallChart></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">
+          🍩 Sektör Dağılımı
+          <button class="pct-toggle" (click)="togglePct()">
+            {{ showPct ? '% Gizle' : '% Göster' }}
+          </button>
+        </div>
+        <div class="chart-body">
+          <canvas #sectorDonut></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">📊 Sektör Aylık Trend (Top 6)</div>
+        <div class="chart-body">
+          <canvas #sectorTrend></canvas>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

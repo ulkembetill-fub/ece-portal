@@ -18,7 +18,7 @@ export class OdataService {
   }
 
   getTurnover(year: number) {
-    const url = `${environment.odata.url}?$filter=Year eq ${year}&$top=5000`;
+    const url = `${environment.odata.url}?$filter=Year eq ${year}&$select=Mall_Code,Month,Amount,Contract_No,Brand_Name&$top=10000`;
     return this.http.get<any>(url, { headers: this.getHeaders() });
   }
 
