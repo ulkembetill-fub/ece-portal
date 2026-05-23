@@ -87,6 +87,7 @@
           <th class="col-rent">Aylık Kira</th>
           <th class="col-months">Kaç Aylık</th>
           <th class="col-rent-status">Kira Durumu</th>
+          <th class="col-mail">Mail</th>
         </tr>
       </thead>
       <tbody>
@@ -134,6 +135,9 @@
               <span *ngIf="r.rentStatus === 'unknown' && r.kiraCurrency" class="currency-badge">{{ r.kiraCurrency }}</span>
               <span *ngIf="r.rentStatus === 'unknown' && !r.kiraCurrency" class="text-dim">—</span>
             </td>
+            <td class="col-mail" (click)="$event.stopPropagation()">
+              <button class="mail-btn" (click)="sendMail(r)" title="Teminat Yenileme Maili">📧</button>
+            </td>
           </tr>
 
           <ng-container *ngIf="r.expanded">
@@ -167,6 +171,9 @@
               <td class="col-rent num">{{ fmt(s.amount) }}</td>
               <td class="col-months num"><span class="text-dim">—</span></td>
               <td class="col-rent-status"><span class="text-dim">—</span></td>
+              <td class="col-mail" (click)="$event.stopPropagation()">
+                <button class="mail-btn" (click)="sendMail(s)" title="Teminat Yenileme Maili">📧</button>
+              </td>
             </tr>
           </ng-container>
 

@@ -5,6 +5,18 @@ import { OdataService } from '../../core/odata';
 import { forkJoin } from 'rxjs';
 import * as XLSX from 'xlsx';
 
+const MALL_NAMES: Record<string, string> = {
+  'AFI': 'AFYON PARK AVM',
+  'CPI': 'ÇEKMEKÖY PARK AVM',
+  'FBI': 'FORUM BORNOVA AVM',
+  'MCA': 'ANTALYA MİGROS AVM',
+  'MCB': 'BEYLİKDÜZÜ MİGROS AVM',
+  'MWI': 'METROWAY AVM',
+  'PAA': 'PARK AFYON AVM',
+  'PAI': 'PALLADIUM AVM',
+  'TCA': 'TERRACITY AVM',
+};
+
 interface TeminatRow {
   no: string;
   customerName: string;
@@ -30,6 +42,9 @@ interface TeminatRow {
   siblings: TeminatRow[];
   expanded: boolean;
   isChild: boolean;
+  documentNo: string;
+  dateReceived: Date | null;
+  requestedDeposit: number;
 }
 
 @Component({
@@ -103,6 +118,7 @@ export class Teminat implements OnInit {
             ? d.Last_Extension_Date : d.Due_Date;
           const dueDate = rawDue && rawDue !== '0001-01-01' ? new Date(rawDue) : null;
           const returnDate = d.Return_Date && d.Return_Date !== '0001-01-01' ? new Date(d.Return_Date) : null;
+          const dateReceived = d.Date_Received && d.Date_Received !== '0001-01-01' ? new Date(d.Date_Received) : null;
           const daysLeft = dueDate
             ? Math.floor((dueDate.getTime() - this.today.getTime()) / (1000 * 60 * 60 * 24))
             : 9999;
@@ -125,7 +141,12 @@ export class Teminat implements OnInit {
           if (kiraCurrency) rentStatus = 'unknown';
           else if (monthlyRent > 0) rentStatus = monthsCovered >= 2 ? 'sufficient' : 'insufficient';
 
-          const row: TeminatRow = {
+          // Missing deposit için talep edilen depozito
+          const depositMonthCount = d.Deposit_Month_Count || 3;
+          const vatMultiplier = d.Deposit_Including_VAT ? 1.20 : 1;
+          const requestedDeposit = monthlyRent * vatMultiplier * depositMonthCount;
+
+          return {
             no: d.No || '',
             customerName: d.CV_Name || '',
             cvNo: d.CV_No || '',
@@ -136,9 +157,11 @@ export class Teminat implements OnInit {
             lotLocationCode: d.Lot_Location_Code || '',
             bankName: d.Bank_Name || '',
             documentType: d.Document_Type || '',
+            documentNo: d.Document_No || '',
             amount: d.Amount_LCY || 0,
             dueDate,
             returnDate,
+            dateReceived,
             validityType: d.Validity_Type || '',
             daysLeft,
             status,
@@ -146,12 +169,12 @@ export class Teminat implements OnInit {
             monthsCovered,
             rentStatus,
             kiraCurrency,
+            requestedDeposit,
             siblingCount: 0,
             siblings: [] as TeminatRow[],
             expanded: false,
             isChild: false
           };
-          return row;
         };
 
         const rows: TeminatRow[] = teminatData
@@ -187,6 +210,54 @@ export class Teminat implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  getMallName(code: string): string {
+    return MALL_NAMES[code] || code;
+  }
+
+  sendMail(r: TeminatRow) {
+    const mallName = this.getMallName(r.mallCode);
+    const vadeStr = r.dueDate ? r.dueDate.toLocaleDateString('tr-TR') : '—';
+    const mektupTarihStr = r.dateReceived ? r.dateReceived.toLocaleDateString('tr-TR') : '—';
+    const requestedStr = r.requestedDeposit > 0
+      ? r.requestedDeposit.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : r.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const mevcutStr = r.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const konu = encodeURIComponent(
+      `${mallName} - ${r.customerName} - ${r.brandName} ${vadeStr} tarihli Teminat Mektubu Hk.`
+    );
+
+    const body = `Merhaba,
+
+${mallName} için vermiş olduğunuz aşağıda detayları belirtilen teminat mektubunun vadesi ${vadeStr} tarihinde dolmaktadır.
+
+İmzalamış olduğunuz sözleşmede belirtilen bedele istinaden yeni depozito bedeliniz: ${requestedStr} TL
+
+Mektup metni içindeki sözleşme imza tarihiniz: ${mektupTarihStr}
+
+Mektup hazır olduğunda, aslını iletmeden önce, tarafımıza taslak görüntüsünü iletmeniz teslimden önce bir revizyon gerekmesi durumunda hızlıca müdahale edilmesi açısından çok önemlidir.
+
+İlgili tutar kadar depozitoyu Banka Teminat mektubu olarak vadesinden üç iş günü önce tarafımıza iletmeniz önemle rica olunur.
+
+Teminat mektubunuzun (ekteki formata uygun olarak) aslı tarafımıza ulaşmadığı taktirde, üzülerek belirtmek isterim ki teminat mektubunuz depozito niteliğini kaybetmemesi adına tazmin edilecektir.
+
+
+Mevcut mektubunuz;
+
+MÜŞTERİ ADI : ${r.customerName}
+MARKA : ${r.brandName}
+MEKTUP TARİHİ : ${mektupTarihStr}
+VADE TARİHİ : ${vadeStr}
+MEKTUP NO : ${r.documentNo}
+Banka : ${r.bankName}
+TUTAR : ${mevcutStr}
+
+
+İyi çalışmalar dilerim.`;
+
+    window.open('mailto:?subject=' + konu + '&body=' + encodeURIComponent(body));
   }
 
   buildStats() {
@@ -281,25 +352,11 @@ export class Teminat implements OnInit {
     }
 
     const ws = XLSX.utils.json_to_sheet(allRows);
-
     ws['!cols'] = [
-      { wch: 12 }, // Tür
-      { wch: 35 }, // Müşteri Adı
-      { wch: 10 }, // Müşteri No
-      { wch: 8 },  // AVM
-      { wch: 20 }, // Marka
-      { wch: 18 }, // Kontrat No
-      { wch: 12 }, // Lot
-      { wch: 10 }, // Mahal
-      { wch: 28 }, // Banka
-      { wch: 12 }, // Belge Türü
-      { wch: 18 }, // Teminat Tutarı
-      { wch: 12 }, // Son Tarih
-      { wch: 10 }, // Kalan Gün
-      { wch: 14 }, // Vade Durumu
-      { wch: 16 }, // Aylık Kira
-      { wch: 10 }, // Kaç Aylık
-      { wch: 12 }, // Kira Durumu
+      { wch: 12 }, { wch: 35 }, { wch: 10 }, { wch: 8 }, { wch: 20 },
+      { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 28 }, { wch: 12 },
+      { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 16 },
+      { wch: 10 }, { wch: 12 },
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, 'Teminat');

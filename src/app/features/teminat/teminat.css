@@ -327,3 +327,6 @@ td {
 }
 
 .text-dim { color: var(--text-dim); }
+.col-mail { width: 50px; text-align: center; }
+.mail-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 2px 4px; border-radius: 4px; transition: transform 0.1s; }
+.mail-btn:hover { transform: scale(1.2); }
