@@ -7,6 +7,7 @@ import { Portal } from './features/portal/portal';
 import { Ocr } from './features/ocr/ocr';
 import { MissingDeposit } from './features/missing-deposit/missing-deposit';
 import { CiroAnalitik } from './features/ciro-analitik/ciro-analitik';
+import { Ihtar } from './features/ihtar/ihtar';
 
 export const routes: Routes = [
   { path: 'ciro', component: Ciro },
@@ -17,5 +18,6 @@ export const routes: Routes = [
   { path: 'ocr', component: Ocr },
   { path: 'missing-deposit', component: MissingDeposit },
   { path: 'ciro-analitik', component: CiroAnalitik },
+  { path: 'ihtar', component: Ihtar },
   { path: '', redirectTo: 'ciro', pathMatch: 'full' },
 ];

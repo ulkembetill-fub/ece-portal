@@ -1,0 +1,86 @@
+<div class="ihtar-container">
+  <div class="ihtar-header">
+    <h1>⚖️ Haklı İhtar Düzeneği</h1>
+    <p class="subtitle">İhtarname Word belgelerinizdeki noter hücrelerini otomatik temizler ve PDF formatına dönüştürür.</p>
+  </div>
+
+  <div class="ihtar-card">
+    <!-- Drag & Drop Area -->
+    <div 
+      class="drop-zone"
+      [class.drag-over]="isDragging"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+      (click)="fileInput.click()"
+    >
+      <input 
+        type="file" 
+        #fileInput 
+        multiple 
+        accept=".docx,.doc" 
+        (change)="onFileSelected($event)" 
+        style="display: none;"
+      >
+      <div class="drop-zone-content">
+        <span class="upload-icon">📁</span>
+        <h3>Word Belgelerini Buraya Sürükle veya Tıkla</h3>
+        <p>Sadece .docx veya .doc uzantılı dosyalar desteklenir.</p>
+      </div>
+    </div>
+
+    <!-- File List Section -->
+    <div class="file-list-section" *ngIf="files.length > 0">
+      <div class="list-header">
+        <span>Yüklenen Belgeler ({{ files.length }})</span>
+        <button class="btn-clear" (click)="clearFiles()" [disabled]="isProcessing">Temizle</button>
+      </div>
+
+      <div class="files-wrapper">
+        <div class="file-item" *ngIf="files.length === 0">
+          Henüz belge yüklenmedi.
+        </div>
+        <div class="file-item" *ngFor="let item of files; let idx = index" [class]="item.status">
+          <div class="file-info">
+            <span class="file-icon">📄</span>
+            <div class="file-meta">
+              <span class="file-name" [title]="item.name">{{ item.name }}</span>
+              <span class="file-size">{{ formatBytes(item.size) }}</span>
+            </div>
+          </div>
+          
+          <div class="file-actions">
+            <!-- Progress Bar/Status -->
+            <div class="status-badge">
+              <span *ngIf="item.status === 'pending'" class="badge badge-pending">Bekliyor</span>
+              <span *ngIf="item.status === 'uploading'" class="badge badge-uploading">İşleniyor %{{item.progress}}</span>
+              <span *ngIf="item.status === 'success'" class="badge badge-success">✓ PDF Hazır</span>
+              <span *ngIf="item.status === 'error'" class="badge badge-error" [title]="item.errorMessage">⚠️ Hata</span>
+            </div>
+
+            <!-- Remove Button -->
+            <button 
+              class="btn-remove" 
+              (click)="removeFile(idx); $event.stopPropagation()" 
+              *ngIf="item.status !== 'uploading'"
+              title="Kaldır"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Panel -->
+      <div class="action-panel">
+        <button 
+          class="btn-process" 
+          (click)="processFiles()" 
+          [disabled]="isProcessing || files.length === 0"
+        >
+          {{ isProcessing ? 'Belgeler İşleniyor...' : 'Dönüştürmeyi Başlat' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
